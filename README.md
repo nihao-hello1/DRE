@@ -7,7 +7,7 @@
 ## 快速开始
 
 ```bash
-git clone git@github.com:nihao-hello1/DRE.git
+git clone git@github.com:YOUR_USERNAME/DRE.git
 cd DRE
 pip install -e .
 ```

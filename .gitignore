@@ -21,6 +21,10 @@ venv/
 # Large reference files
 references/samples/
 
+# Build artifacts
+*.egg-info/
+*.egg
+
 # OS
 .DS_Store
 Thumbs.db

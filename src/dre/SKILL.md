@@ -25,7 +25,7 @@ If the user agrees, install and configure automatically:
 
 ```bash
 # Install
-git clone git@github.com:nihao-hello1/DRE.git && cd DRE
+git clone git@github.com:YOUR_USERNAME/DRE.git && cd DRE
 pip install -e .
 
 # Generate MCP config (auto-detects Python path, avoids PATH issues)
