@@ -175,6 +175,9 @@ def cmd_setup(args: list[str]) -> int:
         print("Supported agents: claude, codex, hermes, openclaw, trae")
         return 1
 
+    import sys
+    python = sys.executable  # always resolves to the active Python interpreter
+
     agent = args[0].lower()
     configs = {
         "claude": {
@@ -183,7 +186,7 @@ def cmd_setup(args: list[str]) -> int:
             "config": {
                 "mcpServers": {
                     "dre": {
-                        "command": "python",
+                        "command": python,
                         "args": ["-m", "dre.mcp_server.server"]
                     }
                 }
@@ -192,12 +195,12 @@ def cmd_setup(args: list[str]) -> int:
         "codex": {
             "file": "~/.codex/config.toml",
             "format": "toml",
-            "config": '[mcp_servers.dre]\ncommand = "python"\nargs = ["-m", "dre.mcp_server.server"]\n'
+            "config": f'[mcp_servers.dre]\ncommand = "{python}"\nargs = ["-m", "dre.mcp_server.server"]\n'
         },
         "hermes": {
             "file": "~/.hermes/config.yaml",
             "format": "yaml",
-            "config": "mcp_servers:\n  dre:\n    command: python\n    args: [\"-m\", \"dre.mcp_server.server\"]\n"
+            "config": f'mcp_servers:\n  dre:\n    command: "{python}"\n    args: ["-m", "dre.mcp_server.server"]\n'
         },
         "openclaw": {
             "file": "~/.openclaw/openclaw.json",
@@ -211,7 +214,7 @@ def cmd_setup(args: list[str]) -> int:
                                 "servers": [{
                                     "name": "dre",
                                     "transport": "stdio",
-                                    "command": "python",
+                                    "command": python,
                                     "args": ["-m", "dre.mcp_server.server"]
                                 }]
                             }
@@ -226,7 +229,7 @@ def cmd_setup(args: list[str]) -> int:
             "config": {
                 "mcpServers": {
                     "dre": {
-                        "command": "python",
+                        "command": python,
                         "args": ["-m", "dre.mcp_server.server"]
                     }
                 }

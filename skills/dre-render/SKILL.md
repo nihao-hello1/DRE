@@ -21,29 +21,19 @@ Tell the user:
 
 > DRE (文档渲染引擎) 还没安装，需要先装一下才能导出 Word。我可以帮您安装，要现在装吗？
 
-If the user agrees, run:
+If the user agrees, install and configure automatically:
 
 ```bash
+# Install
 pip install -e F:/DRE
+
+# Generate MCP config (auto-detects Python path)
+python -m dre.cli setup claude     # → paste into .claude/settings.local.json
+python -m dre.cli setup codex      # → paste into ~/.codex/config.toml
+python -m dre.cli setup hermes     # → paste into ~/.hermes/config.yaml
 ```
 
-Then tell the user to configure their Agent's MCP settings. Print the correct MCP config automatically by running:
-
-```bash
-python -m dre.cli setup <agent-name>
-```
-
-The MCP config will look like this:
-```json
-{
-  "mcpServers": {
-    "dre": {
-      "command": "python",
-      "args": ["-m", "dre.mcp_server.server"]
-    }
-  }
-}
-```
+> **Why `dre setup` instead of manual config?** The `python` command alone may fail because Agent daemon processes use a different PATH. `dre setup` outputs the absolute Python path (`sys.executable`), avoiding the issue entirely.
 
 After MCP is configured and the Agent restarted, the DRE tools will be available.
 
