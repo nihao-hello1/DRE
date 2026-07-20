@@ -1,6 +1,6 @@
 # DRE — Document Rendering Engine
 
-> **AI Agent 的最后一公里：Markdown → 专业 DOCX。**
+> **解决AI Agent 写作出的文档是Markdown格式或者使用python-docx写出来的文件排版格式不友好经过DRE处理后 → 专业 DOCX文档。**
 
 Agent 负责写内容，DRE 负责套格式、加编号、出文档。
 
@@ -10,7 +10,7 @@ Agent 负责写内容，DRE 负责套格式、加编号、出文档。
 
 ```bash
 # 1. 克隆
-git clone https://github.com/YOUR_USERNAME/DRE.git
+https://github.com/nihao-hello1/DRE.git
 cd DRE
 
 # 2. 安装（可编辑模式，代码更新自动生效）
