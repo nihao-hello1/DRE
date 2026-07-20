@@ -83,6 +83,6 @@ Tell the user the output file path.
 
 ## Rules
 
-- Headings in Markdown must NOT contain numbers. DRE adds numbering automatically (1. / 1.1 / 1.1.1).
-- Do NOT add headers or footers to the Markdown. DRE leaves them blank by default.
-- The Markdown token `[TOC]` on its own line inserts an automatic table of contents.
+- **Headings must NOT contain numbers.** Write `## 项目概述` not `## 一、项目概述` or `## 1.1 项目概述`. DRE adds Arabic numbering (1. / 1.1 / 1.1.1) automatically and will strip any pre-existing numbers to avoid duplication.
+- Do NOT add headers or footers to the Markdown. DRE leaves them blank.
+- The Markdown token `[TOC]` on a line by itself inserts an automatic table of contents.

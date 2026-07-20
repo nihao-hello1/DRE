@@ -50,6 +50,24 @@ class DocxRenderer:
         self._template = template
         self._heading_counters: list[int] = [0] * 7  # index 1-6 for H1-H6
 
+    @staticmethod
+    def _strip_existing_number(text: str) -> str:
+        """Remove any pre-existing numbering from heading text.
+
+        Handles: '一、', '1.', '1.1', '（一）', '第X章', etc.
+        Returns the heading text without the number prefix.
+        """
+        import re
+        patterns = [
+            r'^第[一二三四五六七八九十\d]+[章节篇]\s*',  # 第X章
+            r'^[一二三四五六七八九十]+[、．]\s*',        # 一、
+            r'^（[一二三四五六七八九十]+）\s*',           # （一）
+            r'^\d+(\.\d+)*[\.、．\s]\s*',               # 1. / 1.1 / 1.1.1
+        ]
+        for pat in patterns:
+            text = re.sub(pat, '', text, count=1)
+        return text.strip()
+
     def _heading_number(self, level: int) -> str:
         """Generate heading number like '1.' or '1.1.' or '1.1.1.' based on level."""
         if level < 1 or level > 6:
@@ -58,7 +76,7 @@ class DocxRenderer:
         for l in range(level + 1, 7):
             self._heading_counters[l] = 0
         parts = [str(self._heading_counters[l]) for l in range(1, level + 1) if self._heading_counters[l] > 0]
-        return ".".join(parts) + ". "
+        return ".".join(parts) + " "
 
     def render(self, document: Document, output_path: str | Path) -> Path:
         """Render *document* AST to a DOCX file at *output_path*.
@@ -117,7 +135,8 @@ class DocxRenderer:
         if isinstance(node, Heading):
             style_key = f"heading{min(node.level, 6)}"
             style = self._template.resolve_paragraph(style_key)
-            # Auto-number the heading
+            # Auto-number: strip existing number, then add clean one
+            node.text = self._strip_existing_number(node.text)
             number = self._heading_number(node.level)
             node.numbering = number.rstrip('. ')
             node.text = number + node.text
