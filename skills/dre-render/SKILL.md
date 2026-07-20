@@ -25,9 +25,10 @@ If the user agrees, install and configure automatically:
 
 ```bash
 # Install
-pip install -e F:/DRE
+git clone git@github.com:nihao-hello1/DRE.git && cd DRE
+pip install -e .
 
-# Generate MCP config (auto-detects Python path)
+# Generate MCP config (auto-detects Python path, avoids PATH issues)
 python -m dre.cli setup claude     # → paste into .claude/settings.local.json
 python -m dre.cli setup codex      # → paste into ~/.codex/config.toml
 python -m dre.cli setup hermes     # → paste into ~/.hermes/config.yaml
