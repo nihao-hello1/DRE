@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "dre": {
+      "command": "python",
+      "args": ["-m", "dre.mcp_server.server"]
+    }
+  }
+}

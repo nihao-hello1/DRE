@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Test output
+*.docx
+!tests/fixtures/*.docx
+
+# Large reference files
+references/samples/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/cache/
+.claude/file-history/
+.claude/sessions/
+.claude/shell-snapshots/
+.claude/telemetry/

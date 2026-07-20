@@ -1,0 +1,132 @@
+# ============================================================================
+# 模板：紧凑风格 — 小字号、窄边距、省纸
+# 来源：内部评审稿、草稿
+# 适用：内部审核、打印草稿、附件资料
+# ============================================================================
+name: "紧凑"
+description: "紧凑省纸风格。小字号12pt + 窄边距 + 无首行缩进，适合打印草稿和内部文档"
+
+page:
+  size: A4
+  orientation: portrait
+  margins:
+    top: "2.0cm"
+    bottom: "2.0cm"
+    left: "2.0cm"
+    right: "2.0cm"
+
+styles:
+  heading1:
+    font_name: "SimHei"
+    font_size: "14pt"
+    bold: true
+    color: "000000"
+    alignment: left
+    space_before: "8pt"
+    space_after: "4pt"
+    line_spacing: 1.25
+    outline_level: 1
+    keep_with_next: true
+
+  heading2:
+    font_name: "SimHei"
+    font_size: "12pt"
+    bold: true
+    color: "000000"
+    alignment: left
+    space_before: "6pt"
+    space_after: "3pt"
+    line_spacing: 1.25
+    outline_level: 2
+    keep_with_next: true
+
+  heading3:
+    font_name: "SimHei"
+    font_size: "12pt"
+    bold: true
+    color: "000000"
+    alignment: left
+    space_before: "4pt"
+    space_after: "2pt"
+    line_spacing: 1.25
+    outline_level: 3
+    keep_with_next: true
+
+  heading4:
+    font_name: "SimHei"
+    font_size: "12pt"
+    bold: true
+    color: "333333"
+    alignment: left
+    space_before: "3pt"
+    space_after: "2pt"
+    line_spacing: 1.25
+    outline_level: 4
+    keep_with_next: true
+
+  body:
+    font_name: "SimSun"
+    font_size: "12pt"
+    bold: false
+    color: "000000"
+    alignment: justify
+    space_before: "0pt"
+    space_after: "0pt"
+    line_spacing: 1.25
+    first_line_indent: "0cm"
+
+  list_item:
+    font_name: "SimSun"
+    font_size: "12pt"
+    bold: false
+    color: "000000"
+    alignment: left
+    space_before: "0pt"
+    space_after: "0pt"
+    line_spacing: 1.25
+
+  code_block:
+    font_name: "Consolas"
+    font_size: "9pt"
+    bold: false
+    color: "1E1E1E"
+    alignment: left
+    space_before: "4pt"
+    space_after: "4pt"
+    line_spacing: 1.0
+
+  blockquote:
+    font_name: "SimSun"
+    font_size: "11pt"
+    italic: true
+    color: "666666"
+    alignment: left
+    space_before: "3pt"
+    space_after: "3pt"
+    line_spacing: 1.25
+    left_indent: "0.5cm"
+
+  caption:
+    font_name: "SimSun"
+    font_size: "9pt"
+    bold: false
+    color: "333333"
+    alignment: center
+    space_before: "2pt"
+    space_after: "4pt"
+    line_spacing: 1.0
+
+table:
+  font_name: "SimSun"
+  font_size: "9pt"
+  header_bg: "5B9BD5"
+  header_font_color: "FFFFFF"
+  header_bold: true
+  row_alt_color: "F2F2F2"
+  border_color: "BFBFBF"
+
+toc:
+  title: "目  录"
+  title_font_name: "SimHei"
+  title_font_size: "14pt"
+  levels: 3

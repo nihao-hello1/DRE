@@ -1,0 +1,132 @@
+# ============================================================================
+# 模板：正式风格 — 偏庄重、大字距宽
+# 来源：政府公文/正式标书参考
+# 适用：投标文件、正式报告、对外提交文档
+# ============================================================================
+name: "正式"
+description: "正式庄重风格。大字号 + 宽松距 + 仿宋正文，适合投标文件和对外报告"
+
+page:
+  size: A4
+  orientation: portrait
+  margins:
+    top: "3.17cm"
+    bottom: "3.17cm"
+    left: "3.17cm"
+    right: "3.17cm"
+
+styles:
+  heading1:
+    font_name: "SimHei"
+    font_size: "22pt"
+    bold: true
+    color: "000000"
+    alignment: center
+    space_before: "24pt"
+    space_after: "18pt"
+    line_spacing: 1.5
+    outline_level: 1
+    keep_with_next: true
+
+  heading2:
+    font_name: "SimHei"
+    font_size: "18pt"
+    bold: true
+    color: "000000"
+    alignment: left
+    space_before: "18pt"
+    space_after: "12pt"
+    line_spacing: 1.5
+    outline_level: 2
+    keep_with_next: true
+
+  heading3:
+    font_name: "SimHei"
+    font_size: "16pt"
+    bold: true
+    color: "000000"
+    alignment: left
+    space_before: "12pt"
+    space_after: "8pt"
+    line_spacing: 1.5
+    outline_level: 3
+    keep_with_next: true
+
+  heading4:
+    font_name: "SimHei"
+    font_size: "14pt"
+    bold: true
+    color: "333333"
+    alignment: left
+    space_before: "8pt"
+    space_after: "6pt"
+    line_spacing: 1.5
+    outline_level: 4
+    keep_with_next: true
+
+  body:
+    font_name: "FangSong"
+    font_size: "14pt"
+    bold: false
+    color: "000000"
+    alignment: justify
+    space_before: "0pt"
+    space_after: "0pt"
+    line_spacing: 1.5
+    first_line_indent: "0.74cm"
+
+  list_item:
+    font_name: "FangSong"
+    font_size: "14pt"
+    bold: false
+    color: "000000"
+    alignment: left
+    space_before: "3pt"
+    space_after: "3pt"
+    line_spacing: 1.5
+
+  code_block:
+    font_name: "Consolas"
+    font_size: "11pt"
+    bold: false
+    color: "1E1E1E"
+    alignment: left
+    space_before: "8pt"
+    space_after: "8pt"
+    line_spacing: 1.2
+
+  blockquote:
+    font_name: "FangSong"
+    font_size: "13pt"
+    italic: true
+    color: "666666"
+    alignment: left
+    space_before: "8pt"
+    space_after: "8pt"
+    line_spacing: 1.5
+    left_indent: "1.5cm"
+
+  caption:
+    font_name: "SimHei"
+    font_size: "12pt"
+    bold: false
+    color: "333333"
+    alignment: center
+    space_before: "6pt"
+    space_after: "8pt"
+    line_spacing: 1.2
+
+table:
+  font_name: "FangSong"
+  font_size: "12pt"
+  header_bg: "1F4E79"
+  header_font_color: "FFFFFF"
+  header_bold: true
+  row_alt_color: "F2F2F2"
+  border_color: "1F4E79"
+
+toc:
+  title: "目  录"
+  title_font_name: "SimHei"
+  title_font_size: "22pt"
+  levels: 3
