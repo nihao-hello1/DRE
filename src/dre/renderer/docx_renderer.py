@@ -55,13 +55,12 @@ class DocxRenderer:
     #  Word multi-level heading numbering (OOXML)
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _setup_heading_numbering(docx: DocxDocument) -> None:
+    def _setup_heading_numbering(self, docx: DocxDocument) -> None:
         """Register a multi-level list definition for headings.
 
         Levels: H1=1.  H2=1.1.  H3=1.1.1.  H4=1.1.1.1.
-        Numbers are managed by Word — deleting a heading renumbers
-        automatically.
+        The numbering font and size match each heading level from the
+        active template so numbers blend seamlessly with heading text.
         """
         numbering_part = docx.part.numbering_part
         root = numbering_part._element
@@ -74,7 +73,6 @@ class DocxRenderer:
             if stale.get(qn("w:numId")) == "10":
                 root.remove(stale)
 
-        # Build abstractNum
         abn = OxmlElement("w:abstractNum")
         abn.set(qn("w:abstractNumId"), "10")
         mlt = OxmlElement("w:multiLevelType")
@@ -82,26 +80,53 @@ class DocxRenderer:
         abn.append(mlt)
 
         for ilvl, fmt in enumerate(["%1.", "%1.%2.", "%1.%2.%3.", "%1.%2.%3.%4."]):
+            # Resolve the style for this heading level
+            h_style = self._template.resolve_paragraph(f"heading{ilvl + 1}")
+
             lvl = OxmlElement("w:lvl")
             lvl.set(qn("w:ilvl"), str(ilvl))
+
             start = OxmlElement("w:start")
             start.set(qn("w:val"), "1"); lvl.append(start)
+
             nf = OxmlElement("w:numFmt")
             nf.set(qn("w:val"), "decimal"); lvl.append(nf)
+
             lt = OxmlElement("w:lvlText")
             lt.set(qn("w:val"), fmt); lvl.append(lt)
+
             jc = OxmlElement("w:lvlJc")
             jc.set(qn("w:val"), "left"); lvl.append(jc)
+
+            # Number font matches heading font
+            rPr = OxmlElement("w:rPr")
+            rFonts = OxmlElement("w:rFonts")
+            rFonts.set(qn("w:ascii"), h_style.font_name)
+            rFonts.set(qn("w:hAnsi"), h_style.font_name)
+            rFonts.set(qn("w:eastAsia"), h_style.font_name)
+            rFonts.set(qn("w:cs"), h_style.font_name)
+            rPr.append(rFonts)
+            sz = OxmlElement("w:sz")
+            # Python-docx stores sizes in EMU / 12700 -> Pt. Our template uses
+            # strings like "14pt". Strip, convert to half-points for OOXML.
+            sz_val = str(int(float(h_style.font_size.replace("pt", "")) * 2))
+            sz.set(qn("w:val"), sz_val)
+            rPr.append(sz)
+            if h_style.bold:
+                b = OxmlElement("w:b")
+                rPr.append(b)
+            lvl.append(rPr)
+
             pp = OxmlElement("w:pPr")
             ind = OxmlElement("w:ind")
             ind.set(qn("w:left"), "0")
             ind.set(qn("w:hanging"), "0")
             pp.append(ind); lvl.append(pp)
+
             abn.append(lvl)
 
         root.append(abn)
 
-        # Link num instance → abstractNum
         nm = OxmlElement("w:num")
         nm.set(qn("w:numId"), "10")
         ref = OxmlElement("w:abstractNumId")
