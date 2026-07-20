@@ -18,15 +18,12 @@ class ParagraphRenderer:
     def __init__(self, docx: DocxDocument) -> None:
         self._docx = docx
 
-    def render_heading(self, node: Heading, style: ParagraphStyle) -> None:
-        """Render a heading with the resolved style."""
+    def render_heading(self, node: Heading, style: ParagraphStyle):
+        """Render a heading with the resolved style. Returns the paragraph."""
         para = self._docx.add_paragraph()
         self._apply_paragraph_format(para, style)
-
         run = para.add_run(node.text)
         self._apply_run_format(run, style)
-
-        # Outline level for TOC — set via raw OOXML
         if style.outline_level is not None:
             pPr = para._p.get_or_add_pPr()
             ol = pPr.find(qn("w:outlineLvl"))
@@ -34,6 +31,7 @@ class ParagraphRenderer:
                 ol = OxmlElement("w:outlineLvl")
                 pPr.append(ol)
             ol.set(qn("w:val"), str(style.outline_level - 1))
+        return para
 
     def render_paragraph(self, node: Paragraph, style: ParagraphStyle) -> None:
         """Render a body paragraph, including inline formatting."""

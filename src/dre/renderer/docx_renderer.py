@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from docx import Document as DocxDocument
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 from dre.ast.nodes import (
     BlockQuote,
@@ -48,35 +50,98 @@ class DocxRenderer:
 
     def __init__(self, template: StyleTemplate) -> None:
         self._template = template
-        self._heading_counters: list[int] = [0] * 7  # index 1-6 for H1-H6
+
+    # ------------------------------------------------------------------
+    #  Word multi-level heading numbering (OOXML)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _setup_heading_numbering(docx: DocxDocument) -> None:
+        """Register a multi-level list definition for headings.
+
+        Levels: H1=1.  H2=1.1.  H3=1.1.1.  H4=1.1.1.1.
+        Numbers are managed by Word — deleting a heading renumbers
+        automatically.
+        """
+        numbering_part = docx.part.numbering_part
+        root = numbering_part._element
+
+        # Remove old definitions
+        for stale in root.findall(qn("w:abstractNum")):
+            if stale.get(qn("w:abstractNumId")) == "10":
+                root.remove(stale)
+        for stale in root.findall(qn("w:num")):
+            if stale.get(qn("w:numId")) == "10":
+                root.remove(stale)
+
+        # Build abstractNum
+        abn = OxmlElement("w:abstractNum")
+        abn.set(qn("w:abstractNumId"), "10")
+        mlt = OxmlElement("w:multiLevelType")
+        mlt.set(qn("w:val"), "hybridMultilevel")
+        abn.append(mlt)
+
+        for ilvl, fmt in enumerate(["%1.", "%1.%2.", "%1.%2.%3.", "%1.%2.%3.%4."]):
+            lvl = OxmlElement("w:lvl")
+            lvl.set(qn("w:ilvl"), str(ilvl))
+            start = OxmlElement("w:start")
+            start.set(qn("w:val"), "1"); lvl.append(start)
+            nf = OxmlElement("w:numFmt")
+            nf.set(qn("w:val"), "decimal"); lvl.append(nf)
+            lt = OxmlElement("w:lvlText")
+            lt.set(qn("w:val"), fmt); lvl.append(lt)
+            jc = OxmlElement("w:lvlJc")
+            jc.set(qn("w:val"), "left"); lvl.append(jc)
+            pp = OxmlElement("w:pPr")
+            ind = OxmlElement("w:ind")
+            ind.set(qn("w:left"), "0")
+            ind.set(qn("w:hanging"), "0")
+            pp.append(ind); lvl.append(pp)
+            abn.append(lvl)
+
+        root.append(abn)
+
+        # Link num instance → abstractNum
+        nm = OxmlElement("w:num")
+        nm.set(qn("w:numId"), "10")
+        ref = OxmlElement("w:abstractNumId")
+        ref.set(qn("w:val"), "10")
+        nm.append(ref)
+        root.append(nm)
+
+    @staticmethod
+    def _apply_heading_numbering(paragraph, level: int) -> None:
+        """Tag a heading paragraph with Word auto-numbering.
+
+        ``level`` is 1-indexed (H1=1, H2=2, ...).
+        """
+        pPr = paragraph._p.get_or_add_pPr()
+        numPr = OxmlElement("w:numPr")
+        ilvl_el = OxmlElement("w:ilvl")
+        ilvl_el.set(qn("w:val"), str(level - 1))
+        numId_el = OxmlElement("w:numId")
+        numId_el.set(qn("w:val"), "10")
+        numPr.append(ilvl_el)
+        numPr.append(numId_el)
+        pPr.append(numPr)
 
     @staticmethod
     def _strip_existing_number(text: str) -> str:
-        """Remove any pre-existing numbering from heading text.
-
-        Handles: '一、', '1.', '1.1', '（一）', '第X章', etc.
-        Returns the heading text without the number prefix.
-        """
+        """Remove any pre-existing numbering from heading text."""
         import re
         patterns = [
-            r'^第[一二三四五六七八九十\d]+[章节篇]\s*',  # 第X章
-            r'^[一二三四五六七八九十]+[、．]\s*',        # 一、
-            r'^（[一二三四五六七八九十]+）\s*',           # （一）
-            r'^\d+(\.\d+)*[\.、．\s]\s*',               # 1. / 1.1 / 1.1.1
+            r'^第[一二三四五六七八九十\d]+[章节篇]\s*',
+            r'^[一二三四五六七八九十]+[、．]\s*',
+            r'^（[一二三四五六七八九十]+）\s*',
+            r'^\d+(\.\d+)*[\.、．\s]\s*',
         ]
         for pat in patterns:
             text = re.sub(pat, '', text, count=1)
         return text.strip()
 
-    def _heading_number(self, level: int) -> str:
-        """Generate heading number like '1.' or '1.1.' or '1.1.1.' based on level."""
-        if level < 1 or level > 6:
-            return ""
-        self._heading_counters[level] += 1
-        for l in range(level + 1, 7):
-            self._heading_counters[l] = 0
-        parts = [str(self._heading_counters[l]) for l in range(1, level + 1) if self._heading_counters[l] > 0]
-        return ".".join(parts) + " "
+    # ------------------------------------------------------------------
+    #  Public API
+    # ------------------------------------------------------------------
 
     def render(self, document: Document, output_path: str | Path) -> Path:
         """Render *document* AST to a DOCX file at *output_path*.
@@ -88,105 +153,78 @@ class DocxRenderer:
 
         self._setup_document(docx)
 
-        # Track whether we've placed the TOC
-        toc_inserted = False
-        has_toc_placeholder = any(
-            isinstance(c, TableOfContents) for c in document.children
-        )
-
-        # Insert TOC title + field at the beginning if needed
-        if has_toc_placeholder:
+        # Insert TOC if requested
+        has_toc = any(isinstance(c, TableOfContents) for c in document.children)
+        if has_toc:
             toc_cfg = self._template.get_toc_config()
             add_toc_title(docx, toc_cfg)
-            title_style = self._template.resolve_paragraph("heading1")
-            insert_toc(docx, toc_cfg, title_style)
-            # Add a blank paragraph after TOC
+            insert_toc(docx, toc_cfg, self._template.resolve_paragraph("heading1"))
             docx.add_paragraph()
-            toc_inserted = True
 
-        # Render children
         for child in document.children:
             self._render_node(docx, child)
 
-        # Save
         docx.save(str(output_path))
         return output_path
 
     # ------------------------------------------------------------------
-    #  Internal dispatch
+    #  Internal
     # ------------------------------------------------------------------
 
     def _setup_document(self, docx: DocxDocument) -> None:
-        """Apply page-level setup from the template."""
-        page_setup = self._template.get_page_setup()
-        setup_page(docx, page_setup)
-
-        header = self._template.get_header_content()
-        if header.text or header.show_page_number:
-            setup_header(docx, header)
-
-        footer = self._template.get_footer_content()
-        setup_footer(docx, footer)
-
+        page = self._template.get_page_setup()
+        setup_page(docx, page)
+        hdr = self._template.get_header_content()
+        if hdr.text or hdr.show_page_number:
+            setup_header(docx, hdr)
+        ftr = self._template.get_footer_content()
+        if ftr.text or ftr.show_page_number:
+            setup_footer(docx, ftr)
+        self._setup_heading_numbering(docx)
         reset_image_counter()
 
     def _render_node(self, docx: DocxDocument, node: DocumentNode) -> None:
-        """Dispatch a single AST node to the appropriate renderer."""
         if isinstance(node, Heading):
             style_key = f"heading{min(node.level, 6)}"
             style = self._template.resolve_paragraph(style_key)
-            # Auto-number: strip existing number, then add clean one
             node.text = self._strip_existing_number(node.text)
-            number = self._heading_number(node.level)
-            node.numbering = number.rstrip('. ')
-            node.text = number + node.text
             pr = ParagraphRenderer(docx)
-            pr.render_heading(node, style)
+            para = pr.render_heading(node, style)
+            self._apply_heading_numbering(para, node.level)
 
         elif isinstance(node, Paragraph):
             style = self._template.resolve_paragraph("body")
-            pr = ParagraphRenderer(docx)
-            pr.render_paragraph(node, style)
+            ParagraphRenderer(docx).render_paragraph(node, style)
 
         elif isinstance(node, BulletList):
-            style = self._template.resolve_paragraph("list_item")
-            lr = ListRenderer(docx)
-            lr.render_bullet_list(node, style)
+            ListRenderer(docx).render_bullet_list(
+                node, self._template.resolve_paragraph("list_item"))
 
         elif isinstance(node, OrderedList):
-            style = self._template.resolve_paragraph("list_item")
-            lr = ListRenderer(docx)
-            lr.render_ordered_list(node, style)
+            ListRenderer(docx).render_ordered_list(
+                node, self._template.resolve_paragraph("list_item"))
 
         elif isinstance(node, TableNode):
-            table_style = self._template.get_table_style()
-            caption_style = self._template.resolve_paragraph("caption")
-            body_style = self._template.resolve_paragraph("body")
-            tr = TableRenderer(docx)
-            tr.render_table(node, table_style, caption_style, body_style)
+            TableRenderer(docx).render_table(
+                node, self._template.get_table_style(),
+                self._template.resolve_paragraph("caption"),
+                self._template.resolve_paragraph("body"))
 
         elif isinstance(node, Image):
-            caption_style = self._template.resolve_paragraph("caption")
-            ir = ImageRenderer(docx)
-            ir.render_image(node, caption_style)
+            ImageRenderer(docx).render_image(
+                node, self._template.resolve_paragraph("caption"))
 
         elif isinstance(node, CodeBlock):
-            style = self._template.resolve_paragraph("code_block")
-            cr = CodeBlockRenderer(docx)
-            cr.render_code_block(node, style)
+            CodeBlockRenderer(docx).render_code_block(
+                node, self._template.resolve_paragraph("code_block"))
 
         elif isinstance(node, BlockQuote):
-            style = self._template.resolve_paragraph("blockquote")
-            pr = ParagraphRenderer(docx)
-            text = node.text
-            # Wrap in a paragraph with blockquote style
-            from dre.ast.nodes import Paragraph as ParaNode
-            pseudo = ParaNode(text=text)
-            pr.render_paragraph(pseudo, style)
+            ParagraphRenderer(docx).render_paragraph(
+                Paragraph(text=node.text),
+                self._template.resolve_paragraph("blockquote"))
 
         elif isinstance(node, TableOfContents):
-            # Already inserted at setup time — skip here
-            pass
+            pass  # handled in render()
 
         elif isinstance(node, Document):
             for child in node.children:
