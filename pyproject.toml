@@ -24,6 +24,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
 [project.scripts]
 dre = "dre.cli:main"
 dre-mcp = "dre.mcp_server.server:main"
@@ -35,3 +38,6 @@ packages = ["dre", "dre.ast", "dre.parser", "dre.style", "dre.renderer", "dre.mc
 
 [tool.setuptools.package-data]
 dre = ["templates/*.yaml", "SKILL.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

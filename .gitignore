@@ -25,6 +25,9 @@ references/samples/
 *.egg-info/
 *.egg
 
+# Test cache
+.pytest_cache/
+
 # OS
 .DS_Store
 Thumbs.db

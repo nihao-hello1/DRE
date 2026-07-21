@@ -211,4 +211,4 @@ def _template_path(template_name: str) -> Path:
 
 def _default_output_name() -> str:
     import time
-    return f"dre_output_{int(time.time())}.docx"
+    return f"dre_output_{time.time_ns()}.docx"
