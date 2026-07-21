@@ -176,9 +176,7 @@ def cmd_setup(args: list[str]) -> int:
         return 1
 
     import sys
-    python = sys.executable
-    # TOML/YAML treat backslash as escape char — use forward slashes on Windows
-    python_safe = python.replace("\\", "/")
+    python = sys.executable  # absolute path to the current Python interpreter
 
     agent = args[0].lower()
     configs = {
@@ -197,12 +195,12 @@ def cmd_setup(args: list[str]) -> int:
         "codex": {
             "file": "~/.codex/config.toml",
             "format": "toml",
-            "config": f'[mcp_servers.dre]\ncommand = "{python_safe}"\nargs = ["-m", "dre.mcp_server.server"]\n'
+            "config": f"[mcp_servers.dre]\ncommand = '{python}'\nargs = [\"-m\", \"dre.mcp_server.server\"]\nstartup_timeout_sec = 15\n"
         },
         "hermes": {
             "file": "~/.hermes/config.yaml",
             "format": "yaml",
-            "config": f'mcp_servers:\n  dre:\n    command: "{python_safe}"\n    args: ["-m", "dre.mcp_server.server"]\n'
+            "config": f"mcp_servers:\n  dre:\n    command: '{python}'\n    args: ['-m', 'dre.mcp_server.server']\n"
         },
         "openclaw": {
             "file": "~/.openclaw/openclaw.json",
