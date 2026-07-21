@@ -93,6 +93,7 @@ def cmd_show_template(args: list[str]) -> int:
     from dre.config import templates_dir
 
     tmpl_name = args[0]
+    if tmpl_name == "tech_design": tmpl_name = "standard"  # backward compat
     tmpl_path = templates_dir() / f"{tmpl_name}.yaml"
     if not tmpl_path.exists():
         print(f"Error: template '{tmpl_name}' not found", file=sys.stderr)
@@ -126,6 +127,7 @@ def cmd_render(args: list[str]) -> int:
     from dre.config import templates_dir
 
     tmpl_name = parsed.template
+    if tmpl_name == "tech_design": tmpl_name = "standard"  # backward compat
     tmpl_path = templates_dir() / f"{tmpl_name}.yaml"
     if not tmpl_path.exists():
         print(f"Error: template '{tmpl_name}' not found", file=sys.stderr)

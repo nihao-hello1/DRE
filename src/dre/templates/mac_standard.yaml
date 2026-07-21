@@ -1,0 +1,115 @@
+name: 标准（Mac）
+description: 标准风格 Mac 版。macOS 内置字体 STHeiti + STSongti-SC
+page:
+  size: A4
+  orientation: portrait
+  margins:
+    top: 2.54cm
+    bottom: 2.54cm
+    left: 3.17cm
+    right: 3.17cm
+styles:
+  heading1:
+    font_name: STHeiti
+    font_size: 16pt
+    bold: true
+    color: '000000'
+    alignment: left
+    space_before: 12pt
+    space_after: 12pt
+    line_spacing: 1.5
+    outline_level: 1
+    keep_with_next: true
+  heading2:
+    font_name: STHeiti
+    font_size: 14pt
+    bold: true
+    color: '000000'
+    alignment: left
+    space_before: 8pt
+    space_after: 6pt
+    line_spacing: 1.5
+    outline_level: 2
+    keep_with_next: true
+  heading3:
+    font_name: STHeiti
+    font_size: 13pt
+    bold: true
+    color: '000000'
+    alignment: left
+    space_before: 6pt
+    space_after: 6pt
+    line_spacing: 1.5
+    outline_level: 3
+    keep_with_next: true
+  heading4:
+    font_name: STHeiti
+    font_size: 12pt
+    bold: true
+    color: '333333'
+    alignment: left
+    space_before: 6pt
+    space_after: 4pt
+    line_spacing: 1.5
+    outline_level: 4
+    keep_with_next: true
+  body:
+    font_name: STSongti-SC
+    font_size: 12pt
+    bold: false
+    color: '000000'
+    alignment: justify
+    space_before: 0pt
+    space_after: 0pt
+    line_spacing: 1.5
+    first_line_indent: 0.74cm
+  list_item:
+    font_name: STSongti-SC
+    font_size: 12pt
+    bold: false
+    color: '000000'
+    alignment: left
+    space_before: 2pt
+    space_after: 2pt
+    line_spacing: 1.5
+  code_block:
+    font_name: Consolas
+    font_size: 10pt
+    bold: false
+    color: 1E1E1E
+    alignment: left
+    space_before: 6pt
+    space_after: 6pt
+    line_spacing: 1.2
+  blockquote:
+    font_name: STSongti-SC
+    font_size: 11pt
+    italic: true
+    color: '666666'
+    alignment: left
+    space_before: 6pt
+    space_after: 6pt
+    line_spacing: 1.5
+    left_indent: 1cm
+  caption:
+    font_name: STSongti-SC
+    font_size: 10.5pt
+    bold: false
+    color: '333333'
+    alignment: center
+    space_before: 4pt
+    space_after: 6pt
+    line_spacing: 1.2
+table:
+  font_name: SimSun
+  font_size: 10.5pt
+  header_bg: 4472C4
+  header_font_color: FFFFFF
+  header_bold: true
+  row_alt_color: F2F2F2
+  border_color: D9D9D9
+toc:
+  title: 目  录
+  title_font_name: SimHei
+  title_font_size: 16pt
+  levels: 3

@@ -54,8 +54,10 @@ pip install -e . --user
 
 **Step 4 — Generate MCP config:**
 ```bash
-python -m dre.cli setup codex    # or: claude, hermes, openclaw, trae
+python -m dre.cli setup codex    # or: claude, hermes, trae
 ```
+
+> **OpenClaw 用户注意**: 需要先安装 `openclaw-mcp-adapter` 插件，再运行 `python -m dre.cli setup openclaw`。
 
 **Step 5 — Install the Skill and restart the Agent.**
 
@@ -87,8 +89,11 @@ Call `list_templates`. Available by default:
 | formal     | 正式  | FangSong 14pt | 1.5x | 2chars | bids, formal       |
 | compact    | 紧凑  | SimSun 12pt   | 1.25x| none   | drafts             |
 | modern     | 现代  | MS YaHei 11pt | 1.3x | none   | tech companies     |
+| mac_standard | 标准(Mac) | STSongti-SC 12pt | 1.5x | 2chars | macOS users  |
 
-Ask the user which they prefer. Default to `standard`.
+On macOS, choose `mac_standard` (uses built-in STHeiti/STSongti-SC instead of SimHei/SimSun).
+
+Ask the user which they prefer. Default to `standard` (or `mac_standard` on macOS).
 
 ### 3. Custom template
 

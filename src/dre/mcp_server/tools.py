@@ -200,7 +200,13 @@ def get_document_info(docx_path: str) -> dict[str, Any]:
 
 def _template_path(template_name: str) -> Path:
     from dre.config import templates_dir
-    return templates_dir() / f"{template_name}.yaml"
+    # Backward compat: old name maps to standard
+    name = "standard" if template_name == "tech_design" else template_name
+    td = templates_dir()
+    path = td / f"{name}.yaml"
+    if not path.exists():
+        raise FileNotFoundError(f"Template '{template_name}' not found in {td}")
+    return path
 
 
 def _default_output_name() -> str:
