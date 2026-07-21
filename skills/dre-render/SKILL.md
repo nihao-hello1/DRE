@@ -17,18 +17,37 @@ Check whether the `render_document` tool appears in your available tool list.
 
 ### If not available
 
-Tell the user DRE needs to be installed. If they agree, run:
+Tell the user DRE needs to be installed. If they agree, run the following steps in order.
+Stop at any step that fails and report the error.
 
+**Step 1 — Check Python:**
 ```bash
-# Clone from the DRE repository (replace with actual URL)
+python3 --version || python --version
+```
+Must be ≥ 3.10. If not found, tell the user to install Python from https://python.org.
+
+**Step 2 — Check git:**
+```bash
+git --version
+```
+If not found, tell the user to install git from https://git-scm.com.
+
+**Step 3 — Clone & install:**
+```bash
 git clone <DRE_REPO_URL> && cd DRE
 pip install -e .
-
-# Generate MCP config (pick your agent: claude / codex / hermes / openclaw / trae)
-python -m dre.cli setup codex    # or: claude, hermes, openclaw, trae
-
-# Copy the Skill file, then restart the Agent
 ```
+If `pip install -e .` fails with permission errors, retry with `--user`:
+```bash
+pip install -e . --user
+```
+
+**Step 4 — Generate MCP config:**
+```bash
+python -m dre.cli setup codex    # or: claude, hermes, openclaw, trae
+```
+
+**Step 5 — Install the Skill and restart the Agent.**
 
 `dre setup` auto-detects the Python path — no PATH issues.
 
