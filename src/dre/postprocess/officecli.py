@@ -18,11 +18,13 @@ def _find_officecli() -> str | None:
 
     Checks common installation paths.
     """
-    # Common paths
+    # Common paths (Windows + Mac)
     candidates = [
         os.environ.get("OFFICECLI_PATH", ""),
-        str(Path.home() / "AppData" / "Local" / "OfficeCLI" / "officecli.exe"),
+        str(Path.home() / "AppData" / "Local" / "OfficeCLI" / "officecli.exe"),  # Windows
         str(Path.home() / "AppData" / "Local" / "OfficeCLI" / "officecli"),
+        str(Path.home() / ".local" / "bin" / "officecli"),                        # Linux local
+        "/usr/local/bin/officecli",                                                # macOS Homebrew
         "officecli",
     ]
 

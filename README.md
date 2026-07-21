@@ -8,15 +8,34 @@ Agent 负责写内容，DRE 负责套格式、加编号、出文档。
 
 ## 快速开始
 
+### 方式一：Git 克隆
+
 ```bash
-# 1. 克隆
-https://github.com/nihao-hello1/DRE.git
+git clone https://github.com/nihao-hello1/DRE.git
 cd DRE
-
-# 2. 安装（可编辑模式，代码更新自动生效）
 pip install -e .
+```
 
-# 3. 生成 MCP 配置（自动检测 Python 路径，避免 PATH 问题）
+### 方式二：直接下载（无需 Git）
+
+从 [Releases](https://github.com/nihao-hello1/DRE/releases) 下载 zip 包，解压后：
+
+```bash
+cd DRE-0.1.0
+pip install -e .
+```
+
+或用 `curl` 一键下载：
+
+```bash
+curl -L -o DRE.zip https://github.com/nihao-hello1/DRE/archive/refs/tags/v0.1.0.zip
+unzip DRE.zip && cd DRE-0.1.0 && pip install -e .
+```
+
+### 配置
+
+```bash
+# 生成 MCP 配置（自动检测 Python 路径）
 python -m dre.cli setup claude     # Claude Code
 python -m dre.cli setup codex      # Codex CLI
 python -m dre.cli setup hermes     # Hermes

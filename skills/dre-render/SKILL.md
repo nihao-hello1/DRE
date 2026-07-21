@@ -32,11 +32,21 @@ git --version
 ```
 If not found, tell the user to install git from https://git-scm.com.
 
-**Step 3 — Clone & install:**
+**Step 3 — Download & install:**
+
+Via git:
 ```bash
 git clone <DRE_REPO_URL> && cd DRE
 pip install -e .
 ```
+
+Or direct download (no git needed):
+```bash
+curl -L -o DRE.zip <DRE_REPO_URL>/archive/refs/tags/v0.1.0.zip
+unzip DRE.zip && cd DRE-0.1.0
+pip install -e .
+```
+
 If `pip install -e .` fails with permission errors, retry with `--user`:
 ```bash
 pip install -e . --user
