@@ -50,6 +50,7 @@ class DocxRenderer:
 
     def __init__(self, template: StyleTemplate) -> None:
         self._template = template
+        self._h1_is_title: bool = False  # True when first H1 was extracted as doc title
 
     # ------------------------------------------------------------------
     #  Word multi-level heading numbering (OOXML)
@@ -135,15 +136,15 @@ class DocxRenderer:
         root.append(nm)
 
     @staticmethod
-    def _apply_heading_numbering(paragraph, level: int) -> None:
+    def _apply_heading_numbering(paragraph, ilvl: int) -> None:
         """Tag a heading paragraph with Word auto-numbering.
 
-        ``level`` is 1-indexed (H1=1, H2=2, ...).
+        ``ilvl`` is 0-indexed: H1=0, H2=1, H3=2, ...
         """
         pPr = paragraph._p.get_or_add_pPr()
         numPr = OxmlElement("w:numPr")
         ilvl_el = OxmlElement("w:ilvl")
-        ilvl_el.set(qn("w:val"), str(level - 1))
+        ilvl_el.set(qn("w:val"), str(ilvl))
         numId_el = OxmlElement("w:numId")
         numId_el.set(qn("w:val"), "10")
         numPr.append(ilvl_el)
@@ -176,9 +177,11 @@ class DocxRenderer:
         output_path = Path(output_path)
         docx = DocxDocument()
 
-        self._setup_document(docx)
+        # When the parser extracted the first H1 as doc.title, the numbering
+        # should start from H2 → ilvl=0 (not ilvl=1).
+        self._h1_is_title = bool(document.title)
 
-        # Insert TOC if requested
+        self._setup_document(docx)
         has_toc = any(isinstance(c, TableOfContents) for c in document.children)
         if has_toc:
             toc_cfg = self._template.get_toc_config()
@@ -215,7 +218,10 @@ class DocxRenderer:
             node.text = self._strip_existing_number(node.text)
             pr = ParagraphRenderer(docx)
             para = pr.render_heading(node, style)
-            self._apply_heading_numbering(para, node.level)
+            # If H1 was extracted as doc title, shift all levels down by 1
+            # so H2 → ilvl=0, H3 → ilvl=1, etc.
+            ilvl = node.level - (2 if self._h1_is_title else 1)
+            self._apply_heading_numbering(para, max(ilvl, 0))
 
         elif isinstance(node, Paragraph):
             style = self._template.resolve_paragraph("body")

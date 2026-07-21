@@ -23,8 +23,11 @@ Tell the user DRE needs to be installed. If they agree, run:
 # Clone from the DRE repository (replace with actual URL)
 git clone <DRE_REPO_URL> && cd DRE
 pip install -e .
-python -m dre.cli setup claude       # Generates MCP config
-# Then: copy skills/dre-render to the Agent's skills directory, restart
+
+# Generate MCP config (pick your agent: claude / codex / hermes / openclaw / trae)
+python -m dre.cli setup codex    # or: claude, hermes, openclaw, trae
+
+# Copy the Skill file, then restart the Agent
 ```
 
 `dre setup` auto-detects the Python path — no PATH issues.

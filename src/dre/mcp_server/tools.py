@@ -171,12 +171,14 @@ def get_document_info(docx_path: str) -> dict[str, Any]:
         section_count = len(doc.sections)
         char_count = sum(len(p.text) for p in doc.paragraphs)
 
+        from docx.oxml.ns import qn
         headings = []
         for p in doc.paragraphs:
-            if p.style and p.style.name.startswith("Heading"):
+            pPr = p._p.find(qn("w:pPr"))
+            if pPr is not None and pPr.find(qn("w:outlineLvl")) is not None:
                 headings.append({
                     "text": p.text[:100],
-                    "style": p.style.name,
+                    "level": int(pPr.find(qn("w:outlineLvl")).get(qn("w:val"))) + 1,
                 })
 
         return {
