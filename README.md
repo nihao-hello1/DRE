@@ -180,8 +180,7 @@ DRE/
 │   ├── parser/                  #   Markdown 解析（markdown-it-py）
 │   ├── style/                   #   样式引擎（YAML 模板）
 │   └── templates/               #   4 种内置 YAML 模板
-├── tests/fixtures/              # 测试用例
-├── references/                  # 参考企业文档分析
+├── tests/                       # 测试用例
 ├── pyproject.toml               # pip install 入口
 └── .claude/settings.local.json  # Claude Code MCP 参考配置
 ```

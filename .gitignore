@@ -18,8 +18,8 @@ venv/
 *.docx
 !tests/fixtures/*.docx
 
-# Large reference files
-references/samples/
+# Reference files (personal/sensitive)
+references/
 
 # Build artifacts
 *.egg-info/
