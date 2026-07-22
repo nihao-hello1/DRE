@@ -34,6 +34,7 @@ from dre.style.defaults import (
     DEFAULT_PAGE_SETUP,
     DEFAULT_TABLE_STYLE,
     DEFAULT_TOC_CONFIG,
+    CaptionNumberingConfig,
     ParagraphStyle,
 )
 from dre.style.template import StyleTemplate
@@ -51,6 +52,15 @@ class DocxRenderer:
     def __init__(self, template: StyleTemplate) -> None:
         self._template = template
         self._h1_is_title: bool = False  # True when first H1 was extracted as doc title
+
+        # Auto-numbering counters
+        num = template.get_caption_numbering()
+        self._num_config = num
+        self._figure_counter: int = 0
+        self._table_counter: int = 0
+        self._current_chapter: int = 1  # 1-indexed, for "chapter" mode
+        self._chapter_figure_counter: int = 0
+        self._chapter_table_counter: int = 0
 
     # ------------------------------------------------------------------
     #  Word multi-level heading numbering (OOXML)
@@ -211,8 +221,48 @@ class DocxRenderer:
         self._setup_heading_numbering(docx)
         reset_image_counter()
 
+    # ------------------------------------------------------------------
+    #  Caption numbering helpers
+    # ------------------------------------------------------------------
+
+    def _next_figure_caption(self, caption_text: str) -> str:
+        """Return the next numbered figure caption string."""
+        self._figure_counter += 1
+        if self._num_config.mode == "chapter":
+            self._chapter_figure_counter += 1
+            prefix = f"{self._num_config.figure_prefix}{self._current_chapter}-{self._chapter_figure_counter}"
+        else:
+            prefix = f"{self._num_config.figure_prefix}{self._figure_counter}"
+        return f"{prefix}{self._num_config.separator}{caption_text}"
+
+    def _next_table_caption(self, caption_text: str) -> str:
+        """Return the next numbered table caption string."""
+        self._table_counter += 1
+        if self._num_config.mode == "chapter":
+            self._chapter_table_counter += 1
+            prefix = f"{self._num_config.table_prefix}{self._current_chapter}-{self._chapter_table_counter}"
+        else:
+            prefix = f"{self._num_config.table_prefix}{self._table_counter}"
+        return f"{prefix}{self._num_config.separator}{caption_text}"
+
+    def _on_heading(self, level: int) -> None:
+        """Reset per-chapter counters when a top-level heading is encountered."""
+        if not self._num_config.enabled or self._num_config.mode != "chapter":
+            return
+        # Reset on H1 (or H2 when H1 is title)
+        chapter_boundary = 2 if self._h1_is_title else 1
+        if level == chapter_boundary:
+            self._current_chapter += 1
+            self._chapter_figure_counter = 0
+            self._chapter_table_counter = 0
+
+    # ------------------------------------------------------------------
+    #  Internal
+    # ------------------------------------------------------------------
+
     def _render_node(self, docx: DocxDocument, node: DocumentNode) -> None:
         if isinstance(node, Heading):
+            self._on_heading(node.level)
             style_key = f"heading{min(node.level, 6)}"
             style = self._template.resolve_paragraph(style_key)
             node.text = self._strip_existing_number(node.text)
@@ -236,12 +286,19 @@ class DocxRenderer:
                 node, self._template.resolve_paragraph("list_item"))
 
         elif isinstance(node, TableNode):
+            caption = node.caption
+            if caption and self._num_config.enabled:
+                node.caption = self._next_table_caption(caption)
             TableRenderer(docx).render_table(
                 node, self._template.get_table_style(),
                 self._template.resolve_paragraph("caption"),
                 self._template.resolve_paragraph("body"))
 
         elif isinstance(node, Image):
+            # Auto-number the caption before passing to ImageRenderer
+            caption = node.caption
+            if caption and self._num_config.enabled:
+                node.caption = self._next_figure_caption(caption)
             ImageRenderer(docx).render_image(
                 node, self._template.resolve_paragraph("caption"))
 

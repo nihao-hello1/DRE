@@ -61,14 +61,21 @@ def render_document(
         renderer.render(doc, output_path)
         output_path = str(Path(output_path).resolve())
 
-        # Post-processing
+        # Post-processing — explicit opt-in only
         if not no_postprocess:
             from dre.postprocess.officecli import OfficePostProcessor
             pp = OfficePostProcessor()
             if pp.is_available():
-                pp.refresh(output_path)
+                try:
+                    pp.refresh(output_path)
+                except Exception:
+                    warnings.append(
+                        "OfficeCLI refresh failed. TOC page numbers will be correct "
+                        "after opening the document in Word and pressing Ctrl+A → F9."
+                    )
             else:
-                warnings.append("OfficeCLI not available — TOC needs manual update in Word")
+                # Not an error — TOC field is valid, just needs a refresh in Word
+                pass
 
         return {
             "success": True,

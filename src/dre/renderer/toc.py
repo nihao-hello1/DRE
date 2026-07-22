@@ -41,7 +41,7 @@ def insert_toc(docx: DocxDocument, toc_config: TOCConfig, heading_style: Paragra
 
     # Placeholder text that shows before Word updates the field
     placeholder = OxmlElement("w:t")
-    placeholder.text = "（请在 Word 中右键点击此处 → 更新域）"
+    placeholder.text = "（打开文档后按 Ctrl+A → F9 即可刷新目录页码）"
     placeholder.set(qn("xml:space"), "preserve")
 
     fldChar_end = OxmlElement("w:fldChar")

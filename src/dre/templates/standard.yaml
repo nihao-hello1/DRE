@@ -130,3 +130,12 @@ toc:
   title_font_name: "SimHei"
   title_font_size: "16pt"
   levels: 3
+
+numbering:
+  enabled: true
+  mode: chapter
+  figures:
+    prefix: "图"
+  tables:
+    prefix: "表"
+  separator: " "

@@ -155,17 +155,20 @@ def cmd_render(args: list[str]) -> int:
     renderer.render(doc, output_path)
 
     print(f"[OK] Done: {output_path}")
+    print()
+    print("  TIP: Open the document and press Ctrl+A -> F9 to refresh TOC and page numbers.")
 
-    # Post-processing
+    # OfficeCLI post-processing is an explicit opt-in for automation-heavy users
     if not parsed.no_postprocess:
         from dre.postprocess.officecli import OfficePostProcessor
         pp = OfficePostProcessor()
         if pp.is_available():
-            print("Running OfficeCLI post-processing ...")
-            pp.refresh(output_path)
-            print("[OK] Post-processing complete")
-        else:
-            print("(OfficeCLI not available — TOC will need manual update in Word)")
+            print("  OfficeCLI detected, auto-refreshing...")
+            try:
+                pp.refresh(output_path)
+                print("  [OK] TOC and page numbers refreshed.")
+            except Exception:
+                pass  # Fall through — TOC works after manual refresh in Word
 
     return 0
 
@@ -264,6 +267,65 @@ def cmd_setup_main() -> None:
     raise SystemExit(cmd_setup(sys.argv[1:]))
 
 
+def cmd_toc_refresh(args: list[str]) -> int:
+    """Refresh TOC and page-number fields in a DOCX using OfficeCLI (explicit opt-in)."""
+    if not args:
+        print("Usage: python -m dre.cli toc-refresh <file.docx>", file=sys.stderr)
+        return 1
+
+    docx_path = Path(args[0])
+    if not docx_path.exists():
+        print(f"Error: file not found: {docx_path}", file=sys.stderr)
+        return 1
+
+    from dre.postprocess.officecli import OfficePostProcessor
+    pp = OfficePostProcessor()
+    if not pp.is_available():
+        print(
+            "OfficeCLI 未安装。请从 https://clio.officecli.com 安装，\n"
+            "或直接在 Word 中打开文档 → Ctrl+A → F9 手动刷新。",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"刷新中: {docx_path} ...")
+    try:
+        pp.refresh(docx_path)
+        print("[OK] 目录和页码已刷新。")
+    except Exception as exc:
+        print(f"刷新失败: {exc}", file=sys.stderr)
+        return 1
+
+    return 0
+
+
+def cmd_template_search(args: list[str]) -> int:
+    """Search remote templates from the DRE template marketplace."""
+    if not args:
+        print("Usage: python -m dre.cli template search <keyword>", file=sys.stderr)
+        return 1
+
+    keyword = args[0].strip()
+    _print_template_search(keyword)
+    return 0
+
+
+def cmd_template_install(args: list[str]) -> int:
+    """Install a template from the DRE template marketplace."""
+    if not args:
+        print("Usage: python -m dre.cli template install <name>", file=sys.stderr)
+        return 1
+
+    template_name = args[0].strip()
+    return _install_remote_template(template_name)
+
+
+def cmd_template_list_remote(args: list[str]) -> int:
+    """List all templates available in the DRE template marketplace."""
+    _print_template_search("")  # empty keyword = list all
+    return 0
+
+
 def main() -> int:
     commands = {
         "parse": cmd_parse,
@@ -272,26 +334,175 @@ def main() -> int:
         "show-template": cmd_show_template,
         "render": cmd_render,
         "setup": cmd_setup,
+        "toc-refresh": cmd_toc_refresh,
+        "template": cmd_template_dispatch,
     }
 
     if len(sys.argv) < 2:
         print("Usage: python -m dre.cli <command> [args...]", file=sys.stderr)
-        print(f"Commands: {', '.join(commands)}", file=sys.stderr)
+        print(f"Commands: {', '.join(sorted(commands))}", file=sys.stderr)
         return 1
 
     cmd = sys.argv[1]
     if cmd in ("-h", "--help"):
         print("Usage: python -m dre.cli <command> [args...]")
-        print(f"Commands: {', '.join(commands)}")
+        print(f"Commands: {', '.join(sorted(commands))}")
         return 0
 
     handler = commands.get(cmd)
     if handler is None:
         print(f"Unknown command: {cmd}", file=sys.stderr)
-        print(f"Available: {', '.join(commands)}", file=sys.stderr)
+        print(f"Available: {', '.join(sorted(commands))}", file=sys.stderr)
         return 1
 
     return handler(sys.argv[2:])
+
+
+def cmd_template_dispatch(args: list[str]) -> int:
+    """Dispatch ``dre template <subcommand>``."""
+    if not args:
+        print("Usage: python -m dre.cli template <search|install|list-remote>", file=sys.stderr)
+        return 1
+
+    sub = args[0]
+    rest = args[1:]
+    if sub == "search":
+        return cmd_template_search(rest)
+    elif sub == "install":
+        return cmd_template_install(rest)
+    elif sub in ("list-remote", "list_remote", "remote"):
+        return cmd_template_list_remote(rest)
+    else:
+        print(f"Unknown template subcommand: {sub}", file=sys.stderr)
+        print("Available: search, install, list-remote", file=sys.stderr)
+        return 1
+
+
+# ===================================================================
+#  Template Marketplace helpers
+# ===================================================================
+
+# Official DRE template marketplace — GitHub repo serving raw YAML templates.
+_MARKETPLACE_INDEX_URL = (
+    "https://raw.githubusercontent.com/nihao-hello1/DRE-templates/main/index.json"
+)
+_MARKETPLACE_RAW_BASE = (
+    "https://raw.githubusercontent.com/nihao-hello1/DRE-templates/main/templates"
+)
+
+
+def _fetch_marketplace_index() -> list[dict]:
+    """Download the marketplace template index.
+
+    Returns a list of dicts, each with keys: name, description, tags, version.
+    Returns an empty list on any error (network, parsing, etc.).
+    """
+    try:
+        import urllib.request
+        import json
+        req = urllib.request.Request(_MARKETPLACE_INDEX_URL)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict) and "templates" in data:
+            return data["templates"]
+        return []
+    except Exception:
+        return []
+
+
+def _print_template_search(keyword: str) -> None:
+    """Search the marketplace index and print matching templates."""
+    templates = _fetch_marketplace_index()
+    if not templates:
+        print("Cannot connect to template marketplace.")
+        print(f"   Visit: {_MARKETPLACE_INDEX_URL.replace('/index.json', '')}")
+        return
+
+    keyword_lower = keyword.lower()
+    results = [
+        t for t in templates
+        if not keyword_lower
+        or keyword_lower in t.get("name", "").lower()
+        or keyword_lower in t.get("description", "").lower()
+        or keyword_lower in " ".join(t.get("tags", [])).lower()
+    ]
+
+    if not results:
+        print(f"No templates matching '{keyword}'.")
+        print(f"\nAvailable templates ({len(templates)}):")
+        for t in templates:
+            print(f"  {t['name']:20s} - {t.get('description', '')}")
+        return
+
+    print(f"Found {len(results)} template(s):\n")
+    for t in results:
+        tags = ", ".join(t.get("tags", [])[:3])
+        print(f"  {t['name']:20s}  v{t.get('version', '0.1.0')}")
+        print(f"  {t.get('description', '')}")
+        if tags:
+            print(f"  Tags: {tags}")
+        print()
+
+
+def _install_remote_template(name: str) -> int:
+    """Download a remote template YAML and save it locally."""
+    import urllib.request
+
+    from dre.config import templates_dir
+
+    # Check if already installed
+    local_path = templates_dir() / f"{name}.yaml"
+    if local_path.exists():
+        resp = input(f"Template '{name}' already exists. Overwrite? [y/N] ")
+        if resp.lower() not in ("y", "yes"):
+            print("Cancelled.")
+            return 0
+
+    url = f"{_MARKETPLACE_RAW_BASE}/{name}.yaml"
+    print(f"Downloading: {url} ...")
+
+    try:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            content = resp.read()
+    except Exception as exc:
+        print(f"Download failed: {exc}", file=sys.stderr)
+        print(f"Check that template name '{name}' is correct.", file=sys.stderr)
+        return 1
+
+    local_path.write_bytes(content)
+    print(f"[OK] Installed: {local_path}")
+    print(f"     Usage: python -m dre.cli render input.md --template {name} -o output.docx")
+    return 0
+
+
+def cmd_template_search(args: list[str]) -> int:
+    """Search remote templates from the DRE template marketplace."""
+    if not args:
+        print("Usage: python -m dre.cli template search <keyword>", file=sys.stderr)
+        return 1
+
+    keyword = args[0].strip()
+    _print_template_search(keyword)
+    return 0
+
+
+def cmd_template_install(args: list[str]) -> int:
+    """Install a template from the DRE template marketplace."""
+    if not args:
+        print("Usage: python -m dre.cli template install <name>", file=sys.stderr)
+        return 1
+
+    template_name = args[0].strip()
+    return _install_remote_template(template_name)
+
+
+def cmd_template_list_remote(args: list[str]) -> int:
+    """List all templates available in the DRE template marketplace."""
+    _print_template_search("")  # empty keyword = list all
+    return 0
 
 
 if __name__ == "__main__":

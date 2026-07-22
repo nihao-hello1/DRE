@@ -3,6 +3,19 @@
 A StyleTemplate converts the raw YAML dict into the style data classes
 used by the resolver, falling back to built-in defaults for any values
 the YAML omits.
+
+Template inheritance::
+
+    # academic.yaml — only 20 lines of YAML, not 130
+    inherits: standard
+    name: "学术论文"
+    styles:
+      body:
+        font_size: "12pt"        # override body; everything else from standard
+
+A child template inherits all settings from its parent and only needs
+to specify what differs.  Inheritance chains are resolved recursively
+with cycle detection.
 """
 
 from __future__ import annotations
@@ -13,12 +26,14 @@ from typing import Any, Optional
 import yaml
 
 from dre.style.defaults import (
+    DEFAULT_CAPTION_NUMBERING,
     DEFAULT_FOOTER,
     DEFAULT_HEADER,
     DEFAULT_PAGE_SETUP,
     DEFAULT_PARAGRAPH_STYLES,
     DEFAULT_TABLE_STYLE,
     DEFAULT_TOC_CONFIG,
+    CaptionNumberingConfig,
     HeaderFooterContent,
     PageSetup,
     ParagraphStyle,
@@ -37,6 +52,10 @@ class TemplateError(Exception):
 
 class TemplateValidationError(TemplateError):
     """Raised when a template fails validation checks."""
+
+
+class TemplateInheritanceError(TemplateError):
+    """Raised when template inheritance has a problem (cycle, missing parent, etc.)."""
 
 
 # ---------------------------------------------------------------------------
@@ -61,16 +80,23 @@ class StyleTemplate:
         self._header: HeaderFooterContent = DEFAULT_HEADER
         self._footer: HeaderFooterContent = DEFAULT_FOOTER
         self._toc_config: TOCConfig = DEFAULT_TOC_CONFIG
+        self._caption_numbering: CaptionNumberingConfig = DEFAULT_CAPTION_NUMBERING
 
     # ---- Factory methods --------------------------------------------------
 
     @classmethod
-    def from_yaml(cls, path: str | Path) -> "StyleTemplate":
+    def from_yaml(cls, path: str | Path, _chain: Optional[set[str]] = None) -> "StyleTemplate":
         """Load and validate a YAML template file.
+
+        Supports ``inherits: <parent_name>`` — when present, the parent
+        template is loaded first and the child only overrides what it
+        specifies.  Inheritance chains are resolved recursively with
+        cycle detection.
 
         Raises:
             TemplateError: If the file cannot be read or parsed.
             TemplateValidationError: If required fields are missing.
+            TemplateInheritanceError: If inheritance chain is circular or broken.
         """
         path = Path(path)
         if not path.exists():
@@ -83,6 +109,40 @@ class StyleTemplate:
 
         if not isinstance(raw, dict):
             raise TemplateError(f"{path.name}: expected a mapping (dict) at top level")
+
+        # --- template inheritance ------------------------------------------
+        parent_name = raw.pop("inherits", None)
+        if parent_name is not None:
+            if not isinstance(parent_name, str) or not parent_name.strip():
+                raise TemplateInheritanceError(
+                    f"{path.name}: 'inherits' must be a non-empty string (parent template name)"
+                )
+
+            # Cycle detection
+            if _chain is None:
+                _chain = set()
+            canonical = str(Path(path).resolve())
+            if parent_name in _chain:
+                raise TemplateInheritanceError(
+                    f"Circular template inheritance detected: "
+                    f"{' → '.join(sorted(_chain))} → {parent_name}"
+                )
+            _chain.add(canonical)
+
+            # Try to find parent template in the same directory
+            parent_path = path.parent / f"{parent_name}.yaml"
+            if not parent_path.exists():
+                raise TemplateInheritanceError(
+                    f"{path.name}: inherits from '{parent_name}' but "
+                    f"'{parent_name}.yaml' not found in {path.parent}"
+                )
+
+            # Recursively load parent
+            parent = cls.from_yaml(parent_path, _chain)
+            parent_raw = parent._raw  # parent already resolved its own chain
+
+            # Deep-merge: parent provides defaults, child overrides
+            raw = _deep_merge(parent_raw, raw)
 
         return cls._from_dict(raw)
 
@@ -120,6 +180,10 @@ class StyleTemplate:
         if "toc" in raw:
             tmpl._toc_config = _parse_toc(raw["toc"])
 
+        # Caption numbering
+        if "numbering" in raw:
+            tmpl._caption_numbering = _parse_caption_numbering(raw["numbering"])
+
         return tmpl
 
     # ---- Accessors --------------------------------------------------------
@@ -154,6 +218,10 @@ class StyleTemplate:
 
     def get_toc_config(self) -> TOCConfig:
         return self._toc_config
+
+    def get_caption_numbering(self) -> CaptionNumberingConfig:
+        """Return the figure/table auto-numbering configuration."""
+        return self._caption_numbering
 
     def get_metadata(self) -> dict[str, Any]:
         """Return the non-style metadata (name, description)."""
@@ -209,7 +277,35 @@ class StyleTemplate:
                 "title": self._toc_config.title,
                 "levels": self._toc_config.levels,
             },
+            "numbering": {
+                "enabled": self._caption_numbering.enabled,
+                "mode": self._caption_numbering.mode,
+                "figure_prefix": self._caption_numbering.figure_prefix,
+                "table_prefix": self._caption_numbering.table_prefix,
+            },
         }
+
+
+# ===================================================================
+#  Template inheritance: deep-merge helper
+# ===================================================================
+
+def _deep_merge(base: dict, override: dict) -> dict:
+    """Recursively merge *override* into *base*.
+
+    - Keys only in *override* are added.
+    - Keys in both: if both values are dicts, recurse; else *override* wins.
+    - Keys only in *base* stay unchanged.
+
+    Returns a new dict — neither *base* nor *override* is mutated.
+    """
+    result = dict(base)  # shallow copy
+    for key, val in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(val, dict):
+            result[key] = _deep_merge(result[key], val)
+        else:
+            result[key] = val
+    return result
 
 
 # ===================================================================
@@ -301,6 +397,36 @@ def _parse_toc(data: Any) -> TOCConfig:
         title_font_name=_str(data, "title_font_name", DEFAULT_TOC_CONFIG.title_font_name),
         title_font_size=_str(data, "title_font_size", DEFAULT_TOC_CONFIG.title_font_size),
         levels=_int(data, "levels", DEFAULT_TOC_CONFIG.levels),
+    )
+
+
+def _parse_caption_numbering(data: Any) -> CaptionNumberingConfig:
+    """Parse the ``numbering`` section of a template YAML.
+
+    Expected shape::
+
+        numbering:
+          figures:
+            enabled: true
+            prefix: "图"
+            mode: "chapter"
+          tables:
+            enabled: true
+            prefix: "表"
+            mode: "sequential"
+    """
+    if not isinstance(data, dict):
+        return DEFAULT_CAPTION_NUMBERING
+
+    fig_data = data.get("figures", {}) if isinstance(data.get("figures", None), dict) else {}
+    tbl_data = data.get("tables", {}) if isinstance(data.get("tables", None), dict) else {}
+
+    return CaptionNumberingConfig(
+        enabled=_bool(data, "enabled", DEFAULT_CAPTION_NUMBERING.enabled),
+        mode=_str(data, "mode", DEFAULT_CAPTION_NUMBERING.mode),
+        figure_prefix=_str(fig_data, "prefix", DEFAULT_CAPTION_NUMBERING.figure_prefix),
+        table_prefix=_str(tbl_data, "prefix", DEFAULT_CAPTION_NUMBERING.table_prefix),
+        separator=_str(data, "separator", DEFAULT_CAPTION_NUMBERING.separator),
     )
 
 

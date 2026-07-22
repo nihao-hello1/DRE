@@ -1,0 +1,37 @@
+# ============================================================================
+# 模板：学术学位论文 — 继承自 standard，仅覆盖差异项
+# 参考：GB/T 7713.1-2006 学位论文编写规则
+# ============================================================================
+inherits: standard
+name: "学术论文"
+description: "GB/T 7713.1 学位论文规范。继承标准模板，加大学术特色"
+
+page:
+  margins:
+    left: "3.5cm"       # 装订线
+
+styles:
+  heading1:
+    font_size: "16pt"    # 与 standard 相同，仅示范可覆盖
+
+  body:
+    font_name: "SimSun"
+    font_size: "12pt"    # 小四号
+
+  caption:
+    font_name: "SimHei"
+    font_size: "10.5pt"  # 五号黑体
+
+  # 新增：参考文献样式
+  reference:
+    font_name: "SimSun"
+    font_size: "10.5pt"
+    bold: false
+    alignment: justify
+    line_spacing: 1.5
+    first_line_indent: "0cm"
+    left_indent: "0.74cm"
+
+toc:
+  title: "目  录"
+  levels: 3

@@ -75,6 +75,17 @@ class TOCConfig:
     levels: int = 3
 
 
+@dataclass
+class CaptionNumberingConfig:
+    """Auto-numbering settings for figures and tables."""
+
+    enabled: bool = True
+    mode: str = "sequential"  # "sequential" (Fig 1, Fig 2) | "chapter" (Fig 1-1)
+    figure_prefix: str = "图"
+    table_prefix: str = "表"
+    separator: str = " "       # between prefix and caption text
+
+
 # ---------------------------------------------------------------------------
 #  Default template (used when no YAML template is specified)
 # ---------------------------------------------------------------------------
@@ -133,3 +144,4 @@ DEFAULT_PAGE_SETUP = PageSetup()
 DEFAULT_HEADER = HeaderFooterContent()
 DEFAULT_FOOTER = HeaderFooterContent(show_page_number=True)
 DEFAULT_TOC_CONFIG = TOCConfig()
+DEFAULT_CAPTION_NUMBERING = CaptionNumberingConfig()
