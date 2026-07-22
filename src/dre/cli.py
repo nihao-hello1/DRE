@@ -65,22 +65,25 @@ def cmd_validate(args: list[str]) -> int:
 
 
 def cmd_list_templates(args: list[str]) -> int:
-    """List available style templates."""
-    from dre.config import templates_dir
+    """List available style templates (local + marketplace)."""
+    from dre.mcp_server.tools import list_templates as _list_all
 
-    td = templates_dir()
-    if not td.exists():
-        print("No templates directory found.", file=sys.stderr)
-        return 1
+    result = _list_all()
+    local = result.get("local", [])
+    marketplace = result.get("marketplace", [])
 
-    yaml_files = sorted(td.glob("*.yaml"))
-    if not yaml_files:
-        print("No templates found.")
-        return 0
+    print(f"Local templates ({len(local)}):")
+    for t in local:
+        print(f"  {t['name']:20s}  {t.get('description', '')}")
 
-    print("Available templates:")
-    for f in yaml_files:
-        print(f"  {f.stem}")
+    if marketplace:
+        print(f"\nMarketplace ({len(marketplace)}):")
+        for t in marketplace:
+            tags = ", ".join(t.get("tags", [])[:3])
+            tag_str = f"  [{tags}]" if tags else ""
+            print(f"  {t['name']:20s}  {t.get('description', '')} {tag_str}")
+        print(f"\n  Install with: dre template install <name>")
+
     return 0
 
 

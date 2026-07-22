@@ -48,7 +48,10 @@ numbering:
 
 ### 🛒 模板市场
 
+`list_templates()` 一次返回本地 + 市场模板，Agent 自动发现并推荐。用户只需说"导出为投标格式"，Agent 自动判断是否需要从市场安装。
+
 ```bash
+# CLI 用户也可以手动操作
 dre template search 投标          # 搜索远程模板
 dre template list-remote          # 列出所有远程模板
 dre template install minutes      # 一键安装
@@ -104,7 +107,8 @@ cp -r skills/dre-render ~/.claude/skills/dre-render   # Claude Code
 | `weekly_report` 🆕 | 周报月报 | 技术团队汇报 |
 
 ```bash
-dre template install government   # 安装党政公文模板
+# Agent 用户无需手动操作，Agent 自动安装
+dre template install government   # CLI 用户手动安装
 ```
 
 ---
@@ -116,10 +120,18 @@ dre template install government   # 安装党政公文模板
 ```
 Agent 写 Markdown  →  写完主动问"要不要导出 Word？"
                           ↓
-                   选排版风格（标准/正式/紧凑/现代/学术/投标/...）
+                   调用 list_templates() 获取本地+市场模板
                           ↓
-                   调用 DRE MCP 工具渲染 DOCX
+                   推荐最匹配的 3-5 个模板
+                          ↓
+                   用户选了市场模板 → install_template(name) 透明安装
+                          ↓
+                   调用 render_document(md, template) 渲染 DOCX
+                          ↓
+                   Done. 打开文档，Ctrl+A → F9 刷新目录页码。
 ```
+
+用户不需要克隆 `DRE-templates`、不需要配 MCP、不需要跑 CLI——Agent 全自动处理。
 
 Agent 写的标题**不需要带编号**（写 `## 概述` 而不是 `## 1.1 概述`），DRE 自动加 Word 原生多级编号。
 
@@ -227,9 +239,10 @@ toc:
 
 | 工具 | 说明 |
 |:----|:-----|
+| `list_templates()` | 列出本地+市场全部模板（一次调用），Agent 据此推荐最佳模板 |
+| `install_template(name)` | 从市场一键安装模板，Agent 在渲染前自动调用 |
 | `render_document(markdown_content, template_name)` | 核心渲染，Markdown → DOCX |
 | `validate_document(markdown_content)` | 预检文档结构，不生成文件 |
-| `list_templates()` | 列出所有可用模板（含继承链） |
 | `document_info(docx_path)` | 查看已渲染文档的信息 |
 
 ---
@@ -239,7 +252,7 @@ toc:
 ```bash
 dre parse input.md              # 解析 Markdown 并打印 AST
 dre validate input.md           # 验证文档结构
-dre list-templates              # 列出本地模板
+dre list-templates              # 列出本地 + 市场模板
 dre show-template standard      # 查看模板详情（含继承链）
 dre render input.md -t formal -o output.docx   # 渲染 DOCX
 dre setup claude                # 生成 MCP 配置
@@ -257,14 +270,17 @@ dre template install minutes    # 🆕 安装远程模板
 DRE/
 ├── skills/dre-render/SKILL.md   # Agent Skill 文件
 ├── src/dre/                      # Python 包
-│   ├── mcp_server/              #   MCP Server（FastMCP）
-│   ├── renderer/                #   DOCX 渲染引擎（python-docx）
+│   ├── mcp_server/              #   MCP Server（FastMCP，5 个工具）
+│   ├── renderer/                #   DOCX 渲染引擎（python-docx + OOXML）
 │   ├── parser/                  #   Markdown 解析（markdown-it-py）
 │   ├── style/                   #   样式引擎 + 模板继承
 │   └── templates/               #   7 种内置 YAML 模板
 ├── tests/                       # 测试用例
-├── pyproject.toml               # pip install 入口
-└── DRE-templates/               # 🆕 模板市场（独立仓库）
+└── pyproject.toml               # pip install 入口
+
+DRE-templates/                   # 🆕 模板市场（独立仓库）
+├── index.json                   #   搜索索引
+└── templates/                   #   社区贡献模板
 ```
 
 ---
