@@ -23,6 +23,7 @@ from fastmcp import FastMCP
 
 from dre.mcp_server.tools import (
     get_document_info,
+    install_template,
     list_templates,
     render_document,
     validate_document,
@@ -88,13 +89,32 @@ async def tool_validate_document(
 
 @mcp.tool(
     name="list_templates",
-    description="List all available style templates. "
-    "Returns template names and descriptions.",
+    description="List all available style templates (local + marketplace). "
+    "Returns local templates and remote marketplace templates in one call. "
+    "Use this every time the user wants to export a document — pick the best "
+    "matching template from the combined list. If the user picks a marketplace "
+    "template, call install_template first, then render.",
 )
 async def tool_list_templates() -> str:
     """List available style templates."""
     import json
     result = list_templates()
+    return json.dumps(result, ensure_ascii=False)
+
+
+@mcp.tool(
+    name="install_template",
+    description="Install a template from the DRE marketplace. "
+    "Call this BEFORE render_document when the user picks a marketplace "
+    "template from list_templates(). Downloads the YAML to the local "
+    "templates directory so it's available for rendering.",
+)
+async def tool_install_template(
+    name: str,
+) -> str:
+    """Install a template from the marketplace."""
+    import json
+    result = install_template(name=name)
     return json.dumps(result, ensure_ascii=False)
 
 

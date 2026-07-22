@@ -135,32 +135,122 @@ def validate_document(markdown_content: str) -> dict[str, Any]:
 
 
 def list_templates() -> dict[str, Any]:
-    """List available style templates."""
-    from dre.config import templates_dir
-    td = templates_dir()
-    if not td.exists():
-        return {"templates": [], "error": "Templates directory not found"}
+    """List available style templates — both local and marketplace.
 
-    yaml_files = sorted(td.glob("*.yaml"))
-    result = []
+    Local templates are always returned.  Marketplace templates are fetched
+    on a best-effort basis — if the network is unavailable only local
+    results are returned with no error.
+
+    Returns:
+        dict with keys:
+            local (list of dicts),
+            marketplace (list of dicts, may be empty on network failure),
+            all_names (combined sorted list for quick lookup)
+    """
+    from dre.config import templates_dir
+
+    # ---- Local templates ------------------------------------------------
+    td = templates_dir()
+    yaml_files = sorted(td.glob("*.yaml")) if td.exists() else []
+    local = []
     for f in yaml_files:
         try:
             from dre.style.template import StyleTemplate
             tmpl = StyleTemplate.from_yaml(f)
             meta = tmpl.get_metadata()
-            result.append({
+            local.append({
                 "name": f.stem,
                 "description": meta.get("description", ""),
                 "file": str(f.resolve()),
+                "source": "local",
             })
         except Exception:
-            result.append({
+            local.append({
                 "name": f.stem,
                 "description": "(failed to load)",
                 "file": str(f.resolve()),
+                "source": "local",
             })
 
-    return {"templates": result}
+    # ---- Marketplace (best-effort) --------------------------------------
+    marketplace: list[dict] = []
+    local_names = {t["name"] for t in local}
+    try:
+        import urllib.request
+        import json
+        url = "https://raw.githubusercontent.com/nihao-hello1/DRE-templates/main/index.json"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        remote = data if isinstance(data, list) else data.get("templates", [])
+        marketplace = [
+            {
+                "name": t["name"],
+                "description": t.get("description", ""),
+                "tags": t.get("tags", []),
+                "version": t.get("version", "0.1.0"),
+                "source": "marketplace",
+            }
+            for t in remote
+            if t["name"] not in local_names  # don't duplicate local templates
+        ]
+    except Exception:
+        pass  # Network unavailable — silent fallback, not an error
+
+    # Combined sorted list for quick reference
+    all_names = sorted(local_names | {t["name"] for t in marketplace})
+
+    return {
+        "local": local,
+        "marketplace": marketplace,
+        "marketplace_count": len(marketplace),
+        "all_names": all_names,
+        "total": len(local) + len(marketplace),
+    }
+
+
+def install_template(name: str) -> dict[str, Any]:
+    """Install a template from the DRE marketplace.
+
+    Downloads the YAML file to the local templates directory so it
+    becomes available for rendering.  Call this when the user picks a
+    marketplace template from the list_templates() results.
+
+    Args:
+        name: Template name (without .yaml).
+
+    Returns:
+        dict with keys: success, path, message/error
+    """
+    import urllib.request
+    from dre.config import templates_dir
+
+    local_path = templates_dir() / f"{name}.yaml"
+
+    if local_path.exists():
+        return {
+            "success": True,
+            "path": str(local_path),
+            "message": f"Template '{name}' already installed.",
+        }
+
+    url = f"https://raw.githubusercontent.com/nihao-hello1/DRE-templates/main/templates/{name}.yaml"
+    try:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            content = resp.read()
+        local_path.write_bytes(content)
+        return {
+            "success": True,
+            "path": str(local_path),
+            "message": f"Installed. Now available: render_document(..., template_name='{name}')",
+        }
+    except Exception as exc:
+        return {
+            "success": False,
+            "path": "",
+            "error": f"Download failed: {exc}",
+        }
 
 
 def get_document_info(docx_path: str) -> dict[str, Any]:

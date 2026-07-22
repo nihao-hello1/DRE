@@ -81,32 +81,39 @@ Do NOT wait for the user to mention "export" — most users don't know DRE exist
 
 ### 2. Choose a style
 
-Call `list_templates`. Available by default:
+Call `list_templates`. It returns **both** local and marketplace templates in one call:
 
-| template   | style | body font     | line | indent | best for           |
-|------------|-------|---------------|------|--------|--------------------|
-| standard   | 标准  | SimSun 12pt   | 1.5x | 2chars | daily tech docs    |
-| formal     | 正式  | FangSong 14pt | 1.5x | 2chars | bids, formal       |
-| compact    | 紧凑  | SimSun 12pt   | 1.25x| none   | drafts             |
-| modern     | 现代  | MS YaHei 11pt | 1.3x | none   | tech companies     |
-| mac_standard | 标准(Mac) | STSongti-SC 12pt | 1.5x | 2chars | macOS users  |
+```json
+{
+  "local": [ ... ],
+  "marketplace": [ ... ],
+  "all_names": ["academic", "bid", "compact", "formal", "government", ...]
+}
+```
 
-On macOS, choose `mac_standard` (uses built-in STHeiti/STSongti-SC instead of SimHei/SimSun).
+- Show the user the most relevant 3-5 options based on their document type
+- Match keywords: "投标" → bid/formal, "论文" → academic, "公文" → government, "会议" → minutes, "周报" → weekly_report
+- Default to `standard` (or `mac_standard` on macOS)
 
-Ask the user which they prefer. Default to `standard` (or `mac_standard` on macOS).
+**If the user picks a marketplace template** (source="marketplace"):
+Call `install_template(name)` first, then `render_document`.
 
 ### 3. Custom template
 
-If the user wants a style not listed, explain:
+If the user wants a style not listed:
 
 > "模板是 YAML 文件，放在 DRE 的 `src/dre/templates/` 目录下就能被识别。"
-> "你复制一个现成的，改字体/字号/边距这些参数就行。"
-
-The template schema has these sections: `page` (margins), `styles` (heading1-4, body, list_item, code_block, blockquote, caption), `table` (font, header background, alt-row), `toc` (title, levels). Copy and edit an existing one:
+> "新建 20 行就够了，用 `inherits: standard` 继承，只改你要的字体/字号。"
 
 ```bash
-cp src/dre/templates/standard.yaml src/dre/templates/my_style.yaml
-# edit my_style.yaml
+cat > src/dre/templates/my_style.yaml << 'EOF'
+inherits: standard
+name: "我的模板"
+description: "仅改正文字体为楷体"
+styles:
+  body:
+    font_name: "KaiTi"
+EOF
 ```
 
 No restart needed — `list_templates` picks it up immediately.
