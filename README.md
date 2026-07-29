@@ -74,13 +74,27 @@ pip install -e .
 ### 配置
 
 ```bash
-# 生成 MCP 配置（自动检测 Python 路径）
+# 一键生成 MCP 配置（自动检测 Python 路径，无需手动写 JSON）
 python -m dre.cli setup claude     # Claude Code
 python -m dre.cli setup codex      # Codex CLI
+python -m dre.cli setup hermes     # Hermes
 
 # 安装 Skill 到 Agent skills 目录
 cp -r skills/dre-render ~/.claude/skills/dre-render   # Claude Code
 ```
+
+> **注意：不要手动写 JSON！** Windows 路径含 `\`，手动写容易因转义错误导致 JSON 无效，Claude Code 会静默跳过。
+> `dre setup` 自动生成合法 JSON 并输出到正确位置。
+
+不同 Agent 的 MCP 配置格式：
+
+| Agent | 配置方式 | 格式 |
+|-------|---------|------|
+| Claude Code | `dre setup claude` → `settings.local.json` 或 `mcp.json` | JSON |
+| Codex CLI | `dre setup codex` → `~/.codex/config.toml` | TOML |
+| Hermes | `dre setup hermes` → `~/.hermes/config.yaml` | YAML |
+| OpenClaw | `dre setup openclaw` → `~/.openclaw/openclaw.json` | JSON (插件) |
+| Trae | `dre setup trae` → Trae Settings → MCP 手动添加 | JSON |
 
 重启 Agent 后，写完文档它会主动问你要不要导出 Word。
 
