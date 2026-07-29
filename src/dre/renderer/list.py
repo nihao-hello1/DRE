@@ -8,7 +8,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt
 
-from dre.ast.nodes import BulletList, DocumentNode, OrderedList
+from dre.ast.nodes import BulletList, DocumentNode, OrderedList, Paragraph
 from dre.style.defaults import ParagraphStyle
 
 
@@ -37,11 +37,7 @@ class ListRenderer:
 
             # Render item content
             for child in item_children:
-                if hasattr(child, "text") and child.text:
-                    run = para.add_run(child.text)
-                    run.font.name = style.font_name
-                    run.font.size = _parse_pt(style.font_size)
-                    _set_east_asian_font(run, style.font_name)
+                _render_list_item_content(para, child, style)
 
                 # Nested lists
                 if isinstance(child, (BulletList, OrderedList)):
@@ -74,11 +70,7 @@ class ListRenderer:
             _set_east_asian_font(run, style.font_name)
 
             for child in item_children:
-                if hasattr(child, "text") and child.text:
-                    run = para.add_run(child.text)
-                    run.font.name = style.font_name
-                    run.font.size = _parse_pt(style.font_size)
-                    _set_east_asian_font(run, style.font_name)
+                _render_list_item_content(para, child, style)
 
                 if isinstance(child, (BulletList, OrderedList)):
                     if isinstance(child, BulletList):
@@ -113,6 +105,26 @@ def _parse_length(value):
     if value.endswith("pt"):
         return DxPt(float(value.replace("pt", "")))
     return DxPt(float(value.replace("cm", "")) * 28.35)
+
+
+def _render_list_item_content(para, child, style: ParagraphStyle) -> None:
+    """Render a list item's paragraph content, with inline formatting."""
+    if isinstance(child, Paragraph) and child.children:
+        # Render each text run with its own formatting (bold, italic, etc.)
+        for text_run in child.children:
+            if not text_run.text:
+                continue
+            run = para.add_run(text_run.text)
+            run.font.name = style.font_name
+            run.font.size = _parse_pt(style.font_size)
+            run.bold = text_run.bold
+            run.italic = text_run.italic
+            _set_east_asian_font(run, style.font_name)
+    elif hasattr(child, "text") and child.text:
+        run = para.add_run(child.text)
+        run.font.name = style.font_name
+        run.font.size = _parse_pt(style.font_size)
+        _set_east_asian_font(run, style.font_name)
 
 
 def _set_east_asian_font(run, font_name: str) -> None:
