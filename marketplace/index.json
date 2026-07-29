@@ -1,0 +1,26 @@
+{
+  "description": "DRE template marketplace. All templates ship with DRE — install additional community templates here.",
+  "templates": [
+    {
+      "name": "government",
+      "description": "GB/T 9704-2012 党政机关公文格式。红头文件、签发人、主送抄送",
+      "tags": ["政府", "公文", "红头文件", "官方"],
+      "version": "0.1.0",
+      "inherits": "formal"
+    },
+    {
+      "name": "minutes",
+      "description": "会议纪要。清晰简洁的会议记录格式，含参会人员表",
+      "tags": ["会议", "纪要", "办公"],
+      "version": "0.1.0",
+      "inherits": "standard"
+    },
+    {
+      "name": "weekly_report",
+      "description": "周报/月报。适合技术团队的日常工作汇报",
+      "tags": ["周报", "月报", "汇报", "办公"],
+      "version": "0.1.0",
+      "inherits": "compact"
+    }
+  ]
+}

@@ -176,10 +176,10 @@ def list_templates() -> dict[str, Any]:
     marketplace: list[dict] = []
     local_names = {t["name"] for t in local}
 
-    # Try primary CDN first (faster from China), fall back to GitHub raw
+    # jsDelivr CDN first, fall back to GitHub raw
     _MARKET_URLS = [
-        "https://cdn.jsdelivr.net/gh/nihao-hello1/DRE-templates@master/index.json",
-        "https://raw.githubusercontent.com/nihao-hello1/DRE-templates/master/index.json",
+        "https://cdn.jsdelivr.net/gh/nihao-hello1/DRE@master/marketplace/index.json",
+        "https://raw.githubusercontent.com/nihao-hello1/DRE/master/marketplace/index.json",
     ]
     try:
         import urllib.request
@@ -249,8 +249,8 @@ def install_template(name: str) -> dict[str, Any]:
         }
 
     _INSTALL_URLS = [
-        f"https://cdn.jsdelivr.net/gh/nihao-hello1/DRE-templates@master/templates/{name}.yaml",
-        f"https://raw.githubusercontent.com/nihao-hello1/DRE-templates/master/templates/{name}.yaml",
+        f"https://cdn.jsdelivr.net/gh/nihao-hello1/DRE@master/src/dre/templates/{name}.yaml",
+        f"https://raw.githubusercontent.com/nihao-hello1/DRE/master/src/dre/templates/{name}.yaml",
     ]
     content = None
     for url in _INSTALL_URLS:

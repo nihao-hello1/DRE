@@ -1,0 +1,30 @@
+# ============================================================================
+# 模板：会议纪要 — 简洁办公风格
+# ============================================================================
+inherits: standard
+name: "会议纪要"
+description: "会议记录与纪要。清晰的标题行和简洁正文"
+
+styles:
+  heading1:
+    font_size: "18pt"
+    alignment: center
+
+  heading2:
+    font_size: "14pt"
+    bold: true
+
+  body:
+    font_name: "SimSun"
+    font_size: "12pt"
+    line_spacing: 1.5
+
+  list_item:
+    font_name: "SimSun"
+    font_size: "12pt"
+
+toc:
+  levels: 2
+
+numbering:
+  enabled: false

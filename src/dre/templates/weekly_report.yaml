@@ -1,0 +1,30 @@
+# ============================================================================
+# 模板：周报/月报 — 简洁汇报风格
+# ============================================================================
+inherits: compact
+name: "周报/月报"
+description: "技术团队周报月报。紧凑排版，适合内部汇报"
+
+styles:
+  heading1:
+    font_size: "14pt"
+    alignment: left
+
+  heading2:
+    font_size: "12pt"
+
+  body:
+    font_name: "SimSun"
+    font_size: "12pt"
+    line_spacing: 1.25
+    first_line_indent: "0cm"
+
+  list_item:
+    font_name: "SimSun"
+    font_size: "12pt"
+
+toc:
+  levels: 2
+
+numbering:
+  enabled: false

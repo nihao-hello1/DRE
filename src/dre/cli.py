@@ -378,14 +378,14 @@ def cmd_template_dispatch(args: list[str]) -> int:
 #  Template Marketplace helpers
 # ===================================================================
 
-# Official DRE template marketplace — GitHub repo with jsDelivr CDN fallback.
+# DRE marketplace — served from the main repo via jsDelivr CDN + GitHub raw.
 _MARKETPLACE_INDEX_URLS = [
-    "https://cdn.jsdelivr.net/gh/nihao-hello1/DRE-templates@master/index.json",
-    "https://raw.githubusercontent.com/nihao-hello1/DRE-templates/master/index.json",
+    "https://cdn.jsdelivr.net/gh/nihao-hello1/DRE@master/marketplace/index.json",
+    "https://raw.githubusercontent.com/nihao-hello1/DRE/master/marketplace/index.json",
 ]
 _MARKETPLACE_RAW_BASES = [
-    "https://cdn.jsdelivr.net/gh/nihao-hello1/DRE-templates@master/templates",
-    "https://raw.githubusercontent.com/nihao-hello1/DRE-templates/master/templates",
+    "https://cdn.jsdelivr.net/gh/nihao-hello1/DRE@master/src/dre/templates",
+    "https://raw.githubusercontent.com/nihao-hello1/DRE/master/src/dre/templates",
 ]
 
 
