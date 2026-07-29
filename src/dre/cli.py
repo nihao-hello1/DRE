@@ -378,34 +378,37 @@ def cmd_template_dispatch(args: list[str]) -> int:
 #  Template Marketplace helpers
 # ===================================================================
 
-# Official DRE template marketplace — GitHub repo serving raw YAML templates.
-_MARKETPLACE_INDEX_URL = (
-    "https://raw.githubusercontent.com/nihao-hello1/DRE-templates/main/index.json"
-)
-_MARKETPLACE_RAW_BASE = (
-    "https://raw.githubusercontent.com/nihao-hello1/DRE-templates/main/templates"
-)
+# Official DRE template marketplace — GitHub repo with jsDelivr CDN fallback.
+_MARKETPLACE_INDEX_URLS = [
+    "https://cdn.jsdelivr.net/gh/nihao-hello1/DRE-templates@master/index.json",
+    "https://raw.githubusercontent.com/nihao-hello1/DRE-templates/master/index.json",
+]
+_MARKETPLACE_RAW_BASES = [
+    "https://cdn.jsdelivr.net/gh/nihao-hello1/DRE-templates@master/templates",
+    "https://raw.githubusercontent.com/nihao-hello1/DRE-templates/master/templates",
+]
 
 
 def _fetch_marketplace_index() -> list[dict]:
     """Download the marketplace template index.
 
-    Returns a list of dicts, each with keys: name, description, tags, version.
-    Returns an empty list on any error (network, parsing, etc.).
+    Tries jsDelivr CDN first, falls back to GitHub raw.
+    Returns a list of dicts or empty list on failure.
     """
-    try:
-        import urllib.request
-        import json
-        req = urllib.request.Request(_MARKETPLACE_INDEX_URL)
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict) and "templates" in data:
-            return data["templates"]
-        return []
-    except Exception:
-        return []
+    import urllib.request
+    import json
+    for url in _MARKETPLACE_INDEX_URLS:
+        try:
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            if isinstance(data, list):
+                return data
+            if isinstance(data, dict) and "templates" in data:
+                return data["templates"]
+        except Exception:
+            continue
+    return []
 
 
 def _print_template_search(keyword: str) -> None:
@@ -413,7 +416,7 @@ def _print_template_search(keyword: str) -> None:
     templates = _fetch_marketplace_index()
     if not templates:
         print("Cannot connect to template marketplace.")
-        print(f"   Visit: {_MARKETPLACE_INDEX_URL.replace('/index.json', '')}")
+        print(f"   Visit: https://github.com/nihao-hello1/DRE-templates")
         return
 
     keyword_lower = keyword.lower()
@@ -456,16 +459,19 @@ def _install_remote_template(name: str) -> int:
             print("Cancelled.")
             return 0
 
-    url = f"{_MARKETPLACE_RAW_BASE}/{name}.yaml"
-    print(f"Downloading: {url} ...")
+    content = None
+    for base in _MARKETPLACE_RAW_BASES:
+        url = f"{base}/{name}.yaml"
+        try:
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                content = resp.read()
+                break
+        except Exception:
+            continue
 
-    try:
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            content = resp.read()
-    except Exception as exc:
-        print(f"Download failed: {exc}", file=sys.stderr)
-        print(f"Check that template name '{name}' is correct.", file=sys.stderr)
+    if content is None:
+        print(f"Download failed. Check that template name '{name}' is correct.", file=sys.stderr)
         return 1
 
     local_path.write_bytes(content)

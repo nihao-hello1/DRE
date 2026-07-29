@@ -175,13 +175,27 @@ def list_templates() -> dict[str, Any]:
     # ---- Marketplace (best-effort) --------------------------------------
     marketplace: list[dict] = []
     local_names = {t["name"] for t in local}
+
+    # Try primary CDN first (faster from China), fall back to GitHub raw
+    _MARKET_URLS = [
+        "https://cdn.jsdelivr.net/gh/nihao-hello1/DRE-templates@master/index.json",
+        "https://raw.githubusercontent.com/nihao-hello1/DRE-templates/master/index.json",
+    ]
     try:
         import urllib.request
         import json
-        url = "https://raw.githubusercontent.com/nihao-hello1/DRE-templates/main/index.json"
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+        data = None
+        for url in _MARKET_URLS:
+            try:
+                req = urllib.request.Request(url)
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    break
+            except Exception:
+                continue
+        if data is None:
+            raise Exception("All marketplace URLs failed")
+
         remote = data if isinstance(data, list) else data.get("templates", [])
         marketplace = [
             {
@@ -192,7 +206,7 @@ def list_templates() -> dict[str, Any]:
                 "source": "marketplace",
             }
             for t in remote
-            if t["name"] not in local_names  # don't duplicate local templates
+            if t["name"] not in local_names
         ]
     except Exception:
         pass  # Network unavailable — silent fallback, not an error
@@ -234,23 +248,33 @@ def install_template(name: str) -> dict[str, Any]:
             "message": f"Template '{name}' already installed.",
         }
 
-    url = f"https://raw.githubusercontent.com/nihao-hello1/DRE-templates/main/templates/{name}.yaml"
-    try:
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            content = resp.read()
-        local_path.write_bytes(content)
-        return {
-            "success": True,
-            "path": str(local_path),
-            "message": f"Installed. Now available: render_document(..., template_name='{name}')",
-        }
-    except Exception as exc:
+    _INSTALL_URLS = [
+        f"https://cdn.jsdelivr.net/gh/nihao-hello1/DRE-templates@master/templates/{name}.yaml",
+        f"https://raw.githubusercontent.com/nihao-hello1/DRE-templates/master/templates/{name}.yaml",
+    ]
+    content = None
+    for url in _INSTALL_URLS:
+        try:
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                content = resp.read()
+                break
+        except Exception:
+            continue
+
+    if content is None:
         return {
             "success": False,
             "path": "",
-            "error": f"Download failed: {exc}",
+            "error": f"Download failed for '{name}'. Check the template name.",
         }
+
+    local_path.write_bytes(content)
+    return {
+        "success": True,
+        "path": str(local_path),
+        "message": f"Installed. Now available: render_document(..., template_name='{name}')",
+    }
 
 
 def get_document_info(docx_path: str) -> dict[str, Any]:
