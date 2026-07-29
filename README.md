@@ -74,27 +74,26 @@ pip install -e .
 ### 配置
 
 ```bash
-# 一键生成 MCP 配置（自动检测 Python 路径，无需手动写 JSON）
-python -m dre.cli setup claude     # Claude Code
-python -m dre.cli setup codex      # Codex CLI
+# 一键生成 MCP 配置（自动检测 Python 路径）
+python -m dre.cli setup claude     # Claude Code — 复制输出的命令运行即可
+python -m dre.cli setup codex      # Codex CLI — 按输出的 TOML 配置
 python -m dre.cli setup hermes     # Hermes
 
 # 安装 Skill 到 Agent skills 目录
 cp -r skills/dre-render ~/.claude/skills/dre-render   # Claude Code
 ```
 
-> **注意：不要手动写 JSON！** Windows 路径含 `\`，手动写容易因转义错误导致 JSON 无效，Claude Code 会静默跳过。
-> `dre setup` 自动生成合法 JSON 并输出到正确位置。
+> Claude Code 用户注意：MCP 配置必须通过 `claude mcp add` 命令写入 `~/.claude.json`。
+> 不能手动写 `settings.local.json` 或 `mcp.json`——这些文件不支持 MCP 配置。
+> `dre setup claude` 会输出正确的 `claude mcp add` 命令，直接复制运行即可。
 
 不同 Agent 的 MCP 配置格式：
 
 | Agent | 配置方式 | 格式 |
 |-------|---------|------|
-| Claude Code | `dre setup claude` → `settings.local.json` 或 `mcp.json` | JSON |
+| Claude Code | `claude mcp add` → `~/.claude.json` | CLI 命令 |
 | Codex CLI | `dre setup codex` → `~/.codex/config.toml` | TOML |
 | Hermes | `dre setup hermes` → `~/.hermes/config.yaml` | YAML |
-| OpenClaw | `dre setup openclaw` → `~/.openclaw/openclaw.json` | JSON (插件) |
-| Trae | `dre setup trae` → Trae Settings → MCP 手动添加 | JSON |
 
 重启 Agent 后，写完文档它会主动问你要不要导出 Word。
 

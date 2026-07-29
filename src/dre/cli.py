@@ -189,16 +189,9 @@ def cmd_setup(args: list[str]) -> int:
     agent = args[0].lower()
     configs = {
         "claude": {
-            "file": ".claude/settings.local.json",
-            "format": "json",
-            "config": {
-                "mcpServers": {
-                    "dre": {
-                        "command": python,
-                        "args": ["-m", "dre.mcp_server.server"]
-                    }
-                }
-            }
+            "file": "~/.claude.json (via claude mcp add)",
+            "format": "shell",
+            "config": f"claude mcp add --scope user --transport stdio dre -- {python} -m dre.mcp_server.server"
         },
         "codex": {
             "file": "~/.codex/config.toml",
